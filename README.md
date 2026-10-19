@@ -78,28 +78,35 @@ client = hearth.wrap(Anthropic(), mode="optimize")
 
 ## Framework Integrations
 
-Hearth integrates into modern agent frameworks with one line of code (claim C-10):
+Hearth integrates into modern agent frameworks with minimal setup (claim C-10):
 
 ### LangGraph / LangChain
 ```python
 from hearth.integrations.langgraph import HearthMiddleware
 
-# Add middleware to your LangGraph StateGraph or LangChain chain
-graph.use(HearthMiddleware(mode="safe"))
+# Intercept and stabilize state inside your graph node
+middleware = HearthMiddleware(mode="safe")
+processed_state = middleware(state)
 ```
 
 ### Pydantic AI
 ```python
+from anthropic import Anthropic
+from pydantic_ai.models.anthropic import AnthropicModel
 from hearth.integrations.pydantic_ai import wrap_pydantic_ai_client
 
-wrap_pydantic_ai_client(mode="optimize")
+# Wrap client before passing to Pydantic AI model
+wrapped_client = wrap_pydantic_ai_client(Anthropic(), mode="optimize")
+model = AnthropicModel("claude-3-5-sonnet-20241022", anthropic_client=wrapped_client)
 ```
 
 ### OpenAI Agents SDK
 ```python
+from openai import OpenAI
 from hearth.integrations.openai_agents import set_default_openai_client
 
-set_default_openai_client(mode="safe")
+# Set wrapped client as default for all Agents SDK workflows
+set_default_openai_client(OpenAI())
 ```
 
 ---
@@ -107,15 +114,15 @@ set_default_openai_client(mode="safe")
 ## CLI & Tooling
 
 ### `hearth report`
-Inspect aggregated cache performance, read share, and exact input dollar savings across recorded sessions:
+Inspect aggregated cache performance, read share, and exact input dollar savings for a session from the SQLite ledger:
 ```bash
-hearth report
+hearth report --session "session-prod-worker-1"
 ```
 
 ### `hearth diagnose`
-Analyze root causes of cache breaks across turns:
+Analyze root causes of cache breaks in a JSONL trace file:
 ```bash
-hearth diagnose --session-id "session-prod-worker-1"
+hearth diagnose ./traces/session.jsonl
 ```
 
 ### `hearth replay`
