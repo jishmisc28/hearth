@@ -26,7 +26,7 @@ contract:
 	$(PYTEST) -m contract tests/
 
 bench:
-	$(PYTHON) -m hearth.bench.runner
+	$(PYTHON) -m hearth.bench.runner --m0 --verify
 
 report:
 	$(PYTHON) -m hearth.bench.report

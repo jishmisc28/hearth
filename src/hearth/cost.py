@@ -55,23 +55,51 @@ def load_providers_toml(path: str | Path | None = None) -> dict[str, Any]:
 def get_model_pricing(provider: str, model: str) -> ModelPricing:
     """Lookup pricing parameters for a given provider and model from providers.toml."""
     providers_data = load_providers_toml()
-    provider_info = providers_data.get("providers", {}).get(provider, {})
-    model_info = provider_info.get("models", {}).get(model, {})
+    providers_dict = providers_data.get("providers", {})
+    if provider not in providers_dict:
+        raise KeyError(
+            f"Provider '{provider}' not found in providers.toml. Configured providers: {list(providers_dict.keys())}"
+        )
 
-    # Default fallback multipliers from provider level if not on model
-    read_mult = Decimal(
-        str(model_info.get("read_multiplier", provider_info.get("read_multiplier", "0.10")))
-    )
-    write_mult = Decimal(
-        str(model_info.get("write_multiplier", provider_info.get("write_multiplier", "1.00")))
-    )
-    min_prefix = int(
-        model_info.get("min_prefix_tokens", provider_info.get("min_prefix_tokens", 2048))
-    )
+    provider_info = providers_dict[provider]
+    models_dict = provider_info.get("models", {})
+    if model not in models_dict:
+        raise KeyError(
+            f"Model '{model}' not configured for provider '{provider}' in providers.toml. Configured models: {list(models_dict.keys())}"
+        )
+
+    model_info = models_dict[model]
+
+    # Multipliers & minimums: model-level override or provider-level default
+    if "read_multiplier" in model_info:
+        read_mult = Decimal(str(model_info["read_multiplier"]))
+    elif "read_multiplier" in provider_info:
+        read_mult = Decimal(str(provider_info["read_multiplier"]))
+    else:
+        raise KeyError(f"read_multiplier missing for {provider}/{model} in providers.toml")
+
+    if "write_multiplier" in model_info:
+        write_mult = Decimal(str(model_info["write_multiplier"]))
+    elif "write_multiplier" in provider_info:
+        write_mult = Decimal(str(provider_info["write_multiplier"]))
+    else:
+        raise KeyError(f"write_multiplier missing for {provider}/{model} in providers.toml")
+
+    if "min_prefix_tokens" in model_info:
+        min_prefix = int(model_info["min_prefix_tokens"])
+    elif "min_prefix_tokens" in provider_info:
+        min_prefix = int(provider_info["min_prefix_tokens"])
+    else:
+        raise KeyError(f"min_prefix_tokens missing for {provider}/{model} in providers.toml")
 
     # Prices in toml are per million tokens
-    in_per_m = Decimal(str(model_info.get("input_price_per_million", "0.15")))
-    out_per_m = Decimal(str(model_info.get("output_price_per_million", "0.60")))
+    if "input_price_per_million" not in model_info or "output_price_per_million" not in model_info:
+        raise KeyError(
+            f"Pricing per million tokens missing for {provider}/{model} in providers.toml"
+        )
+
+    in_per_m = Decimal(str(model_info["input_price_per_million"]))
+    out_per_m = Decimal(str(model_info["output_price_per_million"]))
 
     million = Decimal("1000000")
     p_in = in_per_m / million
