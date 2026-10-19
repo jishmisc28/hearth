@@ -11,16 +11,18 @@ Marked with @pytest.mark.contract.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 
 import hearth
 from hearth.guard import PrefixGuard
+from hearth.trace import TraceRecorder
 
 
 @pytest.mark.contract
-def test_contract_gemini_caching_and_break() -> None:
-    """Live contract test for Google Gemini."""
+def test_contract_gemini_caching_and_break(tmp_path: Path) -> None:
+    """Live contract test for Google Gemini (BUILD_HANDBOOK §9)."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         pytest.skip("GEMINI_API_KEY not configured for live contract test")
@@ -28,31 +30,34 @@ def test_contract_gemini_caching_and_break() -> None:
     from google import genai
 
     client = genai.Client(api_key=api_key)
+    recorder = TraceRecorder(trace_dir=tmp_path)
+    wrapped = hearth.wrap(client, mode="safe", recorder=recorder)
     session_id = "contract-gemini-live"
-    wrapped = hearth.wrap(client, mode="safe", session_id=session_id)
 
-    # Gemini requires at least 32,768 tokens (or model-specific minimum) for explicit caching,
-    # or implicit caching on Gemini 2.5 Flash if above minimum.
-    large_context = "This is a contract test knowledge base.\n" * 2000
+    large_context = "This is a contract test knowledge base.\n" * 3000
     contents = [
         {"role": "user", "parts": [{"text": f"Context: {large_context}\nQuestion: What is 2+2?"}]}
     ]
 
-    # Call 1
+    # Call 1: Baseline cache write/miss
     resp1 = wrapped.models.generate_content(
         model="gemini-2.5-flash",
         contents=contents,
+        session_id=session_id,
     )
     assert resp1 is not None
 
-    # Call 2 (identical)
+    # Call 2: Identical request (must read from cache: reads > 0)
     resp2 = wrapped.models.generate_content(
         model="gemini-2.5-flash",
         contents=contents,
+        session_id=session_id,
     )
     assert resp2 is not None
+    cached_tokens = getattr(resp2.usage_metadata, "cached_content_token_count", 0) or 0
+    assert cached_tokens > 0, "Second identical call did not read from Gemini prompt cache"
 
-    # Call 3 (deliberate prefix break: mutate prefix)
+    # Call 3: Deliberate break (mutate prefix)
     broken_contents = [
         {
             "role": "user",
@@ -62,8 +67,75 @@ def test_contract_gemini_caching_and_break() -> None:
     resp3 = wrapped.models.generate_content(
         model="gemini-2.5-flash",
         contents=broken_contents,
+        session_id=session_id,
     )
     assert resp3 is not None
+
+    # Verify guard named the break
+    trace = recorder.read_session(session_id)
+    assert len(trace) == 3
+    breaks = trace[2].get("breaks", [])
+    assert len(breaks) > 0, "Guard did not detect deliberate prefix mutation on call 3"
+    assert breaks[0].get("cause") in ("system_changed", "history_rewritten")
+
+
+@pytest.mark.contract
+def test_contract_openai_caching_and_break(tmp_path: Path) -> None:
+    """Live contract test for OpenAI (BUILD_HANDBOOK §9)."""
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        pytest.skip("OPENAI_API_KEY not configured for live contract test")
+
+    import openai
+
+    client = openai.OpenAI(api_key=api_key)
+    recorder = TraceRecorder(trace_dir=tmp_path)
+    wrapped = hearth.wrap(client, mode="safe", recorder=recorder)
+    session_id = "contract-openai-live"
+
+    large_context = "This is a contract test knowledge base.\n" * 1500
+    messages = [
+        {"role": "system", "content": f"Context: {large_context}"},
+        {"role": "user", "content": "What is 2+2?"},
+    ]
+
+    # Call 1: Baseline cache write
+    resp1 = wrapped.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        session_id=session_id,
+    )
+    assert resp1 is not None
+
+    # Call 2: Identical request (must read from cache: reads > 0)
+    resp2 = wrapped.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        session_id=session_id,
+    )
+    assert resp2 is not None
+    details = getattr(resp2.usage, "prompt_tokens_details", None)
+    cached_tokens = getattr(details, "cached_tokens", 0) if details else 0
+    assert cached_tokens > 0, "Second identical call did not read from OpenAI prompt cache"
+
+    # Call 3: Deliberate break (mutate system prompt)
+    broken_messages = [
+        {"role": "system", "content": f"Mutated Context: {large_context}"},
+        {"role": "user", "content": "What is 2+2?"},
+    ]
+    resp3 = wrapped.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=broken_messages,
+        session_id=session_id,
+    )
+    assert resp3 is not None
+
+    # Verify guard named the break with system level
+    trace = recorder.read_session(session_id)
+    assert len(trace) == 3
+    breaks = trace[2].get("breaks", [])
+    assert len(breaks) > 0, "Guard did not detect deliberate prefix break on call 3"
+    assert breaks[0].get("cause") in ("system_changed", "history_rewritten")
 
 
 @pytest.mark.contract
