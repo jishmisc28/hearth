@@ -9,16 +9,28 @@ Gate: Mini-suite passes through each:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import Any
 
-from bench.tasks.registry import get_all_tasks
-from hearth.integrations.langgraph import HearthMiddleware
-from hearth.integrations.openai_agents import (
+# Ensure repo root and src/ are in sys.path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+if str(_REPO_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "src"))
+
+from bench.tasks.registry import get_all_tasks  # noqa: E402
+from hearth.integrations.langgraph import HearthMiddleware  # noqa: E402
+from hearth.integrations.openai_agents import (  # noqa: E402
     get_default_openai_client,
     set_default_openai_client,
     wrap_agents_client,
 )
-from hearth.integrations.pydantic_ai import HearthPydanticAIModel, wrap_pydantic_ai_client
+from hearth.integrations.pydantic_ai import (  # noqa: E402
+    HearthPydanticAIModel,
+    wrap_pydantic_ai_client,
+)
 
 
 class MockIntegrationClient:

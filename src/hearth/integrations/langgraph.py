@@ -7,7 +7,6 @@ from typing import Any
 import hearth
 from hearth.guard import PrefixGuard
 from hearth.layout import optimize_layout
-from hearth.planner import plan_breakpoints
 from hearth.trace import TraceRecorder, get_trace_recorder
 
 
@@ -47,6 +46,27 @@ class HearthMiddleware:
         self._call_count += 1
         changes: list[dict[str, Any]] = []
 
+        if self.mode == "observe":
+            return system, messages, []
+
+        # Restore tool ordering if seen before (safe / optimize mode)
+        clean_tools = list(tools) if tools else []
+        if clean_tools:
+            current_names = [
+                t.get("name") if isinstance(t, dict) else getattr(t, "name", None)
+                for t in clean_tools
+            ]
+            valid_names = [n for n in current_names if n]
+            if not self.first_seen_tools and valid_names:
+                self.first_seen_tools = list(valid_names)
+            elif self.first_seen_tools and valid_names != self.first_seen_tools:
+                tool_map = {n: t for n, t in zip(valid_names, clean_tools, strict=False)}
+                reordered = [tool_map[n] for n in self.first_seen_tools if n in tool_map]
+                for t in clean_tools:
+                    if t not in reordered:
+                        reordered.append(t)
+                clean_tools = reordered
+
         # Standardize message dicts
         msg_dicts: list[dict[str, Any]] = []
         for m in messages:
@@ -74,22 +94,29 @@ class HearthMiddleware:
             new_system, new_msgs, opt_changes = optimize_layout(
                 system=system,
                 messages=msg_dicts,
-                tools=tools,
+                tools=clean_tools,
             )
             changes.extend(opt_changes)
 
-        # Plan breakpoints
-        plan_breakpoints(
-            provider=self.provider,
-            segments=[],
-            expected_calls=2,
-            session_id=self.session_id,
+        # Evaluate prefix guard
+        import time
+
+        self.guard.evaluate_call(
+            curr_params={"model": "default"},
+            curr_tools=clean_tools,
+            curr_system=new_system,
+            curr_messages=new_msgs,
+            total_tokens=sum(len(str(m.get("content", ""))) // 4 for m in new_msgs),
+            ts=time.time(),
         )
 
         return new_system, new_msgs, changes
 
     def __call__(self, state: dict[str, Any]) -> dict[str, Any]:
         """Functional middleware invocation on LangGraph state dict."""
+        if self.mode == "observe":
+            return dict(state)
+
         messages = state.get("messages", [])
         tools = state.get("tools")
         system = state.get("system", "")

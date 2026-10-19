@@ -61,6 +61,34 @@ def test_langgraph_middleware_mini_suite() -> None:
         assert len(transformed_state.get("_hearth_changes", [])) > 0
 
 
+def test_langgraph_observe_passthrough() -> None:
+    """Verifies that HearthMiddleware in observe mode passes messages through unmodified by reference (INV-01)."""
+
+    class CustomMessage:
+        def __init__(self, content: str, msg_type: str = "human"):
+            self.content = content
+            self.type = msg_type
+
+    orig_msgs = [
+        CustomMessage("Message 1"),
+        CustomMessage("Message 2", msg_type="ai"),
+    ]
+    state = {
+        "system": "System prompt",
+        "messages": orig_msgs,
+        "tools": [{"name": "tool_b"}, {"name": "tool_a"}],
+    }
+
+    middleware = HearthMiddleware(mode="observe", session_id="observe-test")
+    out_state = middleware(state)
+
+    # State messages must be identical list/objects
+    assert out_state["messages"] is orig_msgs
+    assert out_state["messages"][0] is orig_msgs[0]
+    assert out_state["system"] == "System prompt"
+    assert "_hearth_changes" not in out_state
+
+
 def test_pydantic_ai_adapter_mini_suite(tmp_path: Path) -> None:
     """Verifies that Pydantic AI adapter wraps client and executes mini-suite."""
     tasks = get_all_tasks()[:3]

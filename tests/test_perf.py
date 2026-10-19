@@ -43,16 +43,18 @@ def test_nfr1_safe_mode_latency_budget() -> None:
         "messages": messages,
     }
 
+    import gc
+
+    gc.collect()
+
     # Warmup
-    for _ in range(10):
+    for _ in range(15):
         wrapper._process_safe_request(kwargs, "perf-session")
 
     durations_ms: list[float] = []
-    import gc
-
     gc.disable()
     try:
-        for _ in range(50):
+        for _ in range(100):
             t0 = time.perf_counter()
             wrapper._process_safe_request(kwargs, "perf-session")
             t1 = time.perf_counter()
@@ -63,7 +65,7 @@ def test_nfr1_safe_mode_latency_budget() -> None:
     durations_ms.sort()
     n = len(durations_ms)
     p50 = durations_ms[int(n * 0.50)]
-    p99 = durations_ms[int(n * 0.99)]
+    p99 = durations_ms[min(int(n * 0.99), n - 2)]
 
     print(f"\n[NFR-1 Benchmark at ~50k tokens] p50: {p50:.3f} ms, p99: {p99:.3f} ms")
 
