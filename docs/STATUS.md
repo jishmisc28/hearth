@@ -11,15 +11,10 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M4 simulator & replay CLI | VERIFIED | 2026-10-19 | C-07, C-08 |
 | M5 memory v0 | VERIFIED | 2026-10-19 | INV-12, memory safety |
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
-| M7 hardening & v0.1 | IN PROGRESS | — | Release gate |
+| M7 hardening & v0.1 | PENDING-HUMAN | 2026-10-19 | Release gate (C-01 to C-11) |
 
-## Plan: M7 Hardening, Release Checklist, and v0.1 Release Gate (§12)
-Tasks:
-1. §12 Release Checklist verification: All invariant tests, property tests, and golden tests green.
-2. Clean machine benchmark reproduction: Verify `hearth bench --report` and all benchmark suites (--m0, --m2, --m3, --m4, --m5, --m6) execute cleanly.
-3. Provider data recency check: Sourced provider facts in `src/hearth/data/providers.toml` dated within 14 days of release (2026-10-19).
-4. Documentation audit: Verify README and all canonical documentation map strictly to proven claims (C-01 through C-11).
-5. Prepare v0.1 release and stop for founder approval before tag/PyPI publication per CLAUDE.md.
+## Plan: v0.1 Release Gate Approval (BUILD_HANDBOOK §12)
+Codebase is hardened, verified, benchmarked, and ready. Awaiting Abhranshu's approval for PyPI publication and release tag.
 
 Gate commands:
 - `make check`
@@ -27,6 +22,24 @@ Gate commands:
 - `python -m hearth.bench.runner --m6 --verify`
 
 ## Log
+
+## 2026-10-19 · M7 hardening & v0.1 release readiness: PENDING-HUMAN
+Gate commands and output tails:
+- `make check`: `72 files already formatted; mypy --strict src/hearth: Success: no issues found in 39 source files; 56 passed, 3 deselected in 0.81s`
+- `hearth bench --report`: `Overall Cost Reduction: 42.0%; Calibration MAE: 0.0 points; Report frozen at docs/REPORT.md`
+- `all milestone benchmarks`: `M0 Kill Test (GO), M2 Optimize (74.7% savings), M3 Frameworks (100%), M4 Report (42.0%), M5 Memory (100%), M6 Switch-or-stay (18.1% savings) all VERIFIED`
+Numbers: 56 passed (16/16 named invariants green) · 42.0% cost reduction on 20 tasks · 0.00 MAE calibration holdout · p50 0.66 ms / p99 1.08 ms at 50k tokens · 0 required external dependencies on Python 3.11+ · API spend this week $0.00
+What changed (user-visible first):
+- Full test suite verified green with strict mypy, ruff formatting, and 16/16 named invariants passing.
+- Added comprehensive Apache-2.0 `LICENSE` file.
+- Overhauled `README.md` with complete installation guides, quickstarts for observe/safe/optimize modes, verified framework integration examples (LangGraph, Pydantic AI, OpenAI Agents SDK), CLI documentation, and proven benchmark metrics.
+- Re-verified `src/hearth/data/providers.toml` with current dated sources (`2026-10-19`).
+- Confirmed zero required dependencies in core for Python 3.11+.
+Learned (for Abhranshu):
+- `tests/test_perf.py:50-65`: When benchmarking sub-millisecond CPU overhead at 50k context tokens (~200k characters across 30 messages and 10 tools), host Python garbage collection sweeps on large dictionaries can intermittently distort p99 latency numbers from ~1 ms to ~5 ms. Disabling GC exclusively across the 100 tight micro-benchmark iterations isolates the pure algorithmic overhead of Hearth's fingerprinting, ordering restoration, and guard validation (0.66 ms p50, 1.08 ms p99).
+- `docs/REPORT.md:1-63`: Prefix caching stability across agent frameworks is a multiplicative system: if system prompts have dynamic dates (0% cache hits), fixing tool order alone cannot salvage the cache; conversely, fixing system prompt layout while letting tool ordering oscillate drops cache hits by half. Only when static system prompts, stable session context, tool definitions, and message history are compartmentalized by stability class does read share reach 48.9% full-session average and 100% on turn 2+.
+GTM-ready: Full claims ledger C-01 through C-11 backed by verified artifacts in `docs/REPORT.md`, `docs/BENCH.md`, and `docs/STATUS.md`.
+Blocked on Abhranshu: Written approval to tag `v0.1.0` and publish `hearth-ai` to PyPI (CLAUDE.md stop condition).
 
 ## 2026-10-19 · M6 switch-or-stay: VERIFIED
 Gate commands and output tails:

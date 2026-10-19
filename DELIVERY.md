@@ -14,14 +14,14 @@ Ship Hearth v0.1: an embeddable context engine that keeps an AI agent's prompt c
 | M4: Replay CLI, simulator v1, and Cache Efficiency Report data freeze | Proven | docs/REPORT.md | — | No |
 | M5: Memory v0 with temporal facts and write checks | Proven | docs/STATUS.md | — | No |
 | M6: Switch-or-stay router and TTL optimizer | Proven | docs/STATUS.md | — | No |
-| M7: Hardening, public benchmark reproduction, and v0.1 release | Building | — | — | YES (Release approval) |
+| M7: Hardening, public benchmark reproduction, and v0.1 release | Proven | docs/STATUS.md | — | YES (Founder approval for v0.1.0 release & PyPI publication) |
 
 ## 3. Parked
 - P2: Optional online token counting endpoint mode (`--online`) for provider APIs.
 - P2: Expose memory FTS5 indexing configuration for custom schemas.
 
 ## 4. Needs Founder
-None.
+- Release authorization: Approve bumping version from `0.1.0b1` to `0.1.0`, creating `v0.1.0` git tag, and trusted publishing to PyPI (`hearth-ai`).
 
 ## 5. Last Updated
-2026-10-19 · d6e3a7d
+2026-10-19 · 9614604
