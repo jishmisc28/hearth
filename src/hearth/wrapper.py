@@ -20,7 +20,7 @@ from hearth.guard import PrefixGuard
 from hearth.layout import optimize_layout
 from hearth.ledger import Ledger
 from hearth.otel import record_span
-from hearth.planner import plan_breakpoints
+from hearth.planner import get_ttl_optimizer, plan_breakpoints
 from hearth.segments import segment_request
 from hearth.sim.tokens import count_text_tokens
 from hearth.trace import TraceRecorder, get_trace_recorder
@@ -146,12 +146,25 @@ class WrappedMethod:
                 }
             )
 
-        # 4. Plan breakpoints
+        # 4. Plan breakpoints and TTL optimization (§5.4)
+        from hearth import get_current_session
+
+        curr_session = get_current_session()
+        expected_calls = 2
+        expected_pause = False
+        if curr_session is not None:
+            if curr_session._expected_calls is not None:
+                expected_calls = curr_session._expected_calls
+            expected_pause = curr_session._expected_pause
+
+        get_ttl_optimizer().record_call(session_id)
+
         plan = plan_breakpoints(
             provider=self.provider,
             segments=segments,
-            expected_calls=2,
+            expected_calls=expected_calls,
             session_id=session_id,
+            expected_pause=expected_pause,
         )
         if plan.should_cache and plan.prompt_cache_key:
             mod_kwargs["prompt_cache_key"] = plan.prompt_cache_key

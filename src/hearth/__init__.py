@@ -7,34 +7,27 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Literal, TypeVar
 
-from hearth import memory, tools
+from hearth import memory, policies, tools
+from hearth.exceptions import HearthError, HearthPrefixBreak
 from hearth.trace import TraceRecorder, get_trace_recorder
 
-__version__ = "0.1.0a1"
+__version__ = "0.1.0b1"
 __all__ = [
     "wrap",
     "session",
     "volatile",
     "tools",
     "memory",
+    "policies",
     "Mode",
     "SessionContext",
+    "HearthError",
     "HearthPrefixBreak",
     "get_trace_recorder",
     "TraceRecorder",
 ]
 
 Mode = Literal["observe", "safe", "optimize"]
-
-
-class HearthPrefixBreak(Exception):
-    """Raised before sending when strict=True and a user-caused prefix break is detected."""
-
-    def __init__(self, message: str, cause: str, level: str, message_index: int | None = None):
-        super().__init__(message)
-        self.cause = cause
-        self.level = level
-        self.message_index = message_index
 
 
 class SessionContext:

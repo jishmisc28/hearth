@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hearth-ai"
-version = "0.1.0a1"
+version = "0.1.0b1"
 description = "Embeddable context engine that keeps an AI agent's prompt cache warm and proves it with measurements."
 readme = "README.md"
 requires-python = ">=3.10"

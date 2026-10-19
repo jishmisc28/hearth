@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from hearth import HearthPrefixBreak
+from hearth.exceptions import HearthPrefixBreak
 from hearth.fingerprint import fingerprint_message
 
 # Taxonomy of cause codes and user attribution (BUILD_HANDBOOK §5.2, INV-10)
