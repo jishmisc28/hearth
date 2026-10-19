@@ -18,6 +18,7 @@ from hearth.adapters import (
 from hearth.cost import compute_call_cost
 from hearth.guard import PrefixGuard
 from hearth.ledger import Ledger
+from hearth.otel import record_span
 from hearth.planner import plan_breakpoints
 from hearth.segments import segment_request
 from hearth.sim.tokens import count_text_tokens
@@ -196,6 +197,21 @@ class WrappedMethod:
             uncached_tokens=normalized_usage.uncached,
             output_tokens=normalized_usage.output,
             cost_usd=cost_info.actual_cost,
+            breaks_count=len(recorded_breaks),
+        )
+
+        # Record OpenTelemetry span if available (D-10)
+        record_span(
+            session_id=session_id,
+            call_index=call_idx,
+            provider=self.provider,
+            model=model_name,
+            mode=self.mode,
+            read_tokens=normalized_usage.read,
+            write_tokens=normalized_usage.write,
+            uncached_tokens=normalized_usage.uncached,
+            output_tokens=normalized_usage.output,
+            cost_usd=str(cost_info.actual_cost),
             breaks_count=len(recorded_breaks),
         )
 
