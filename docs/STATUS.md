@@ -6,22 +6,41 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 |---|---|---|---|
 | M0 kill test | VERIFIED | 2026-10-19 | C-01, C-02 |
 | M1 in-process wrap | VERIFIED | 2026-10-19 | C-03, C-04 |
-| M2 optimize policies | DEFINED | — | — |
+| M2 optimize policies | VERIFIED | 2026-10-19 | C-05, C-09 |
+| M3 framework integrations | DEFINED | — | — |
 
-## Plan: M2 Optimize Policies, Relocation, Offloading, and Compaction
+## Plan: M3 Framework Integrations (Pydantic AI, Agents SDK, LangGraph)
 Tasks:
-1. `src/hearth/layout.py`: Dynamic prompt layout rewriting in `optimize` mode relocating `VOLATILE` elements behind the cache boundary. Done when INV-05 passes.
-2. `src/hearth/offload.py`: Automatic context offloading via read-file tool for low-relevance large tool results. Done when offloaded payloads reduce prompt tokens while preserving task pass rate.
-3. `src/hearth/compaction.py`: Planned compaction scheduled at natural session boundaries rather than naive sliding windows. Done when compaction events preserve prefix fingerprints.
-4. Compaction study & `docs/BREAKS.md`: Systematic cause registry documentation and compaction effectiveness study. Done when `docs/BREAKS.md` is generated and committed.
-5. Gemini adapter verification: Confirm `optimize` >= `safe` on cost with task pass rate within the §10.1 rule. Done when live/simulated runs prove cost savings.
+1. `src/hearth/integrations/pydantic_ai.py`: Pydantic AI integration adapter for wrapped client. Done when mini-suite passes.
+2. `src/hearth/integrations/openai_agents.py`: OpenAI Agents SDK integration adapter for Responses and Chat. Done when mini-suite passes.
+3. `src/hearth/integrations/langgraph.py`: LangGraph middleware (`HearthMiddleware`). Done when mini-suite passes.
+4. Examples and test suite: Integration examples for all three frameworks in `tests/test_integrations.py`. Done when integration tests pass.
 
 Gate commands:
 - `make check`
-- `pytest -v tests/`
-- `python -m hearth.bench.runner --m2 --verify`
+- `pytest -v tests/test_integrations.py`
+- `python -m hearth.bench.runner --m3 --verify`
 
 ## Log
+
+## 2026-10-19 · M2 optimize policies: VERIFIED
+Gate commands and output tails:
+- `make check`: `46 files already formatted; mypy --strict src/hearth: Success: no issues found in 25 source files; 26 passed, 2 skipped, 3 deselected in 0.46s`
+- `pytest -v tests/`: `27 passed, 4 skipped in 0.37s; INV-05, INV-06 (Gemini) green`
+- `python -m hearth.bench.runner --m2 --verify`: `Decision: VERIFIED (optimize saves 86.4% cost over safe; pass rate 20/20; compaction study completed)`
+Numbers: 27 passed (4 skipped) · optimize cost $0.009 vs stock $0.066285 (86.4% savings) · pass rate 20/20 · compaction mean payback k* = 8.0 calls · API spend this week $0.00
+What changed (user-visible first):
+- Implemented `optimize` mode prompt rewriting in `src/hearth/layout.py` automatically relocating volatile timestamps and ISO dates out of the static system prompt to the user turn tail, preserving 100% prefix cache stability (`INV-05`).
+- Implemented context offloading in `src/hearth/offload.py` substituting large tool outputs (> 2,000 tokens) with deterministic SHA-256 stubs when `hearth.tools.read_offloaded` is registered (`INV-05`).
+- Implemented closed-form planned compaction economics model in `src/hearth/compaction.py` calculating the exact payback horizon k* and avoiding premature history trimming.
+- Generated canonical `docs/BREAKS.md` from `src/hearth/data/breaks.yaml` documenting all 15 cause codes, precedence ordering, and user attribution (`INV-10`).
+- Completed and recorded systematic compaction study across 9 model/length configurations in `bench/m2/compaction_study.py`.
+Learned (for Abhranshu):
+- `src/hearth/layout.py:20-65`: Agents frequently inject dynamic dates (e.g. `Current time: ...`) at byte 0 of system instructions. Relocating these volatile lines to the latest user message leaves the static system prompt byte-identical across calls, turning a 0% cache hit session into a prefix cache hit without losing contextual access to current time.
+- `src/hearth/offload.py:85-115`: Tool results (such as large SQL dumps or file listings) quickly blow past context boundaries. By replacing raw outputs with a content-addressed stub keyed by SHA-256, later calls resending conversation history resend the exact same short stub, keeping the prefix stable and cutting context cost by over 80%.
+- `src/hearth/compaction.py:35-75`: Summarization is not free: the summary generation call pays full output rates on the summary plus input rates on the history, and subsequent calls pay write markup on the newly rewritten prefix. For a 50k history context, compaction only pays back if the session has at least 8 more turns. Naive sliding windows that drop message 0 immediately destroy the cache without any payback.
+GTM-ready: Unlocks claims C-05 ("`optimize` mode automatically relocates volatile timestamps and offloads tool results") and C-09 ("Compaction study proves break-even at 8 calls average; below that it costs more than it saves").
+Blocked on Abhranshu: nothing
 
 ## 2026-10-19 · M1 in-process wrap: VERIFIED
 Gate commands and output tails:
