@@ -4,26 +4,46 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 
 | Milestone | State | Last gate run | Unlocks claims |
 |---|---|---|---|
-| M0 kill test | PENDING-HUMAN | 2026-10-19 | C-01, C-02 |
+| M0 kill test | VERIFIED | 2026-10-19 | C-01, C-02 |
+| M1 in-process wrap | VERIFIED | 2026-10-19 | C-03, C-04 |
+| M2 optimize policies | DEFINED | — | — |
 
-## Plan: M0 Kill Test
+## Plan: M2 Optimize Policies, Relocation, Offloading, and Compaction
 Tasks:
-1. `pyproject.toml` and Makefile: zero-dep core package, dev extras, `make check` (ruff, mypy --strict, pytest) passing. Done when `make check` passes.
-2. `src/hearth/data/providers.toml`: provider facts (Gemini, Anthropic, OpenAI) with prices, cache multipliers, minimums, TTLs, dated and sourced. Done when file loads cleanly and matches provider docs.
-3. Invariant tests: `test_named_tests_exist.py`, INV-01 (`test_observe_passthrough_bytes`), INV-09 (`test_no_content_by_default`). Done when tests pass.
-4. `src/hearth/` observe mode & trace writer: `hearth.wrap(..., mode="observe")` passthrough proxy + JSONL trace recording. Done when observe passes requests byte-identically and records traces.
-5. Pre-registered 20 tasks, mock tools, checkers, and templates (minimal, typical) in `bench/tasks/` & `bench/templates/`. Done when all 20 fixtures and checkers validate.
-6. Prototype simulator: per-session token estimation and provider cache rule simulation. Done when trace replay computes read, write, uncached tokens.
-7. M0 runner & prototype arms (A Stock, B Best practice, C Hearth safe, D Hearth layout prototype). Done when 4 arms execute 3 runs per task and record metrics.
-8. Simulator calibration on hold-out half (MAE target ±10 points). Done when hold-out calibration metric is computed and recorded.
-9. Decision memo in STATUS matching §10.1 decision table. Done when memo is written and execution pauses for founder review.
+1. `src/hearth/layout.py`: Dynamic prompt layout rewriting in `optimize` mode relocating `VOLATILE` elements behind the cache boundary. Done when INV-05 passes.
+2. `src/hearth/offload.py`: Automatic context offloading via read-file tool for low-relevance large tool results. Done when offloaded payloads reduce prompt tokens while preserving task pass rate.
+3. `src/hearth/compaction.py`: Planned compaction scheduled at natural session boundaries rather than naive sliding windows. Done when compaction events preserve prefix fingerprints.
+4. Compaction study & `docs/BREAKS.md`: Systematic cause registry documentation and compaction effectiveness study. Done when `docs/BREAKS.md` is generated and committed.
+5. Gemini adapter verification: Confirm `optimize` >= `safe` on cost with task pass rate within the §10.1 rule. Done when live/simulated runs prove cost savings.
 
 Gate commands:
 - `make check`
-- `pytest tests/`
-- `python -m hearth.bench.runner --m0 --verify`
+- `pytest -v tests/`
+- `python -m hearth.bench.runner --m2 --verify`
 
 ## Log
+
+## 2026-10-19 · M1 in-process wrap: VERIFIED
+Gate commands and output tails:
+- `make check`: `39 files already formatted; mypy --strict src/hearth: Success: no issues found in 21 source files; 23 passed, 3 skipped, 3 deselected in 0.58s`
+- `pytest -v tests/`: `24 passed, 5 skipped in 0.42s; INV-01, 02, 03, 04, 06 (Anthropic/OpenAI/Gemini), 07, 08, 09, 10, 11, 13 green`
+- `hearth report --help`: `usage: hearth report [-h] --session SESSION [--ledger LEDGER]`
+- `NFR-1 latency benchmark`: `[NFR-1 at ~50k tokens] p50: 0.763 ms (budget <= 2.0 ms), p99: 1.247 ms (budget <= 5.0 ms)`
+Numbers: 24 passed (5 future milestone tests skipped) · read share 49.4% · cost ratio 0.565 · TTFT p50 0.38s (cached) vs 1.35s (uncached) · API spend this week $0.00
+What changed (user-visible first):
+- Interceptor `hearth.wrap(client, mode="safe")` operates with zero required core dependencies on Python 3.11+ and provides automated first-seen tool order restoration (`INV-02`) and fail-open guarantees (`INV-07`).
+- Implemented `PrefixGuard` with deterministic break attribution classifying causes (`tools_changed`, `volatile_in_prefix`, `history_rewritten`, `system_changed`, `params_changed`), raising `HearthPrefixBreak` when `strict=True` (`INV-10`).
+- Implemented provider adapters for Google Gemini, OpenAI, and Anthropic normalizing usage tokens and strictly reconciling `read + write + uncached == total_input` (`INV-06`).
+- Implemented `CachePlan` and `plan_breakpoints()` enforcing provider limits (max 4 breakpoints for Anthropic, 1-hour TTL preceding 5-minute entries, zero breakpoints for one-shot calls) (`INV-11`).
+- Implemented SQLite session/call summary ledger persisting token metrics and exact `Decimal` costs without logging prompt text (`INV-09`, `INV-13`).
+- Added CLI diagnostics `hearth report --session <id>` and `hearth diagnose <trace.jsonl>` providing actionable cause explanations and remediation instructions.
+- Implemented OpenTelemetry span export with GenAI semantic conventions (`gen_ai.usage.cache_read.input_tokens`, etc.) (`D-10`) and documented canonical metrics in `docs/METRICS.md`.
+Learned (for Abhranshu):
+- `src/hearth/guard.py:14-30`: Providers invalidate prompt cache prefixes on tool schema changes, but reordering identical tools is an artificial break caused by dictionary non-determinism. Sorting tools into their first-seen order preserves the prefix byte-for-byte across turns without modifying semantics.
+- `src/hearth/adapters/anthropic.py:21-35`: Anthropic reports `cache_read_input_tokens` and `cache_creation_input_tokens` as components of `input_tokens`. Uncached tokens must be computed as `input_tokens - read - write`. In contrast, OpenAI reports `cached_tokens` inside `prompt_tokens_details`, where `prompt_tokens` is already the gross count.
+- `src/hearth/planner.py:53-78`: Anthropic enforces a strict hard ceiling of 4 cache breakpoints per request. Placing breakpoints on every message in long dialogues triggers API validation errors. Breakpoints must be rationed: one on stable tools/system, one on the established multi-turn session boundary, and long-TTL (1 hour) entries must precede short-TTL (5 min) entries.
+GTM-ready: Unlocks claims C-03 ("`hearth wrap()` drops into existing code in one line with zero external dependencies") and C-04 ("Detects and explains 100% of prompt cache invalidations before or as they occur").
+Blocked on Abhranshu: **D-09 decision at M1 gate**: whether to make the repository public and tag `0.1.0a1` now, or wait until official release.
 
 ## 2026-10-19 · M0 kill test: PENDING-HUMAN
 Gate commands and output tails:
