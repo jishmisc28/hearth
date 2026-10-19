@@ -433,14 +433,110 @@ def test_planner_limits() -> None:
     assert len(plan_oneshot.breakpoints) == 0
 
 
-@pytest.mark.skip(reason="INV-12 scheduled for M5")
-def test_memory_supersede() -> None:
+def test_memory_supersede(tmp_path: Path) -> None:
     """INV-12: Memory facts are superseded, never silently overwritten."""
+    from hearth.memory import MemoryStore
+
+    store = MemoryStore(db_path=tmp_path / "memory.sqlite")
+
+    # 1. Record initial fact
+    f1_id = store.remember(
+        scope="user-123",
+        subject="preferred_language",
+        predicate="is",
+        value="Python",
+        source="user",
+        source_session="sess-1",
+    )
+    assert f1_id is not None
+
+    f1 = store.get_fact(f1_id)
+    assert f1 is not None
+    assert f1.value == "Python"
+    assert f1.valid_to is None
+    assert f1.superseded_by is None
+
+    # 2. Update fact with new value
+    f2_id = store.remember(
+        scope="user-123",
+        subject="preferred_language",
+        predicate="is",
+        value="Rust",
+        source="user",
+        source_session="sess-2",
+    )
+    assert f2_id is not None
+    assert f2_id != f1_id
+
+    # 3. Verify old fact is superseded (closed, valid_to set, superseded_by set), NOT overwritten
+    f1_updated = store.get_fact(f1_id)
+    assert f1_updated is not None
+    assert f1_updated.value == "Python"
+    assert f1_updated.valid_to is not None
+    assert f1_updated.superseded_by == f2_id
+
+    # 4. Verify new fact is active
+    f2 = store.get_fact(f2_id)
+    assert f2 is not None
+    assert f2.value == "Rust"
+    assert f2.valid_to is None
+    assert f2.superseded_by is None
+
+    # 5. Query active facts returns only active fact
+    active_facts = store.recall(scope="user-123", query="preferred_language")
+    assert len(active_facts) == 1
+    assert active_facts[0].value == "Rust"
 
 
-@pytest.mark.skip(reason="INV-12 scheduled for M5")
-def test_memory_no_session_mutation() -> None:
+def test_memory_no_session_mutation(tmp_path: Path) -> None:
     """INV-12: Mid-session memory writes never change SESSION."""
+    import hearth
+    from hearth.memory import MemoryStore
+
+    store = MemoryStore(db_path=tmp_path / "memory.sqlite")
+
+    # Initial pinned fact
+    store.remember(
+        scope="project-x",
+        subject="database",
+        predicate="engine",
+        value="PostgreSQL",
+        source="user",
+        source_session="init",
+    )
+
+    # Start session 1: pinned facts are loaded into SESSION prefix
+    with hearth.session("session-worker-1") as s:
+        # Pinned facts loaded once at session start
+        pinned_text = store.get_pinned_session_text(scope="project-x", subjects=["database"])
+        assert "database engine PostgreSQL" in pinned_text
+
+        # Mid-session fact write: remembers new fact mid-session
+        store.remember(
+            scope="project-x",
+            subject="database",
+            predicate="engine",
+            value="SQLite",
+            source="tool",
+            source_session="session-worker-1",
+        )
+
+        # In current session, SESSION prefix text must NOT change (preserves prefix cache)
+        same_session_text = store.get_pinned_session_text(
+            scope="project-x", subjects=["database"], session_id="session-worker-1"
+        )
+        assert "database engine PostgreSQL" in same_session_text
+
+        # Mid-session writes are placed into turn tail (volatile)
+        volatile_notes = s.pop_volatile()
+        # Verify tail contains newly written fact or note
+        assert any("SQLite" in note for note in volatile_notes)
+
+    # Next session: newly promoted fact loads into SESSION prefix
+    next_session_text = store.get_pinned_session_text(
+        scope="project-x", subjects=["database"], session_id="session-worker-2"
+    )
+    assert "database engine SQLite" in next_session_text
 
 
 def test_cost_decimal() -> None:
