@@ -13,8 +13,12 @@ class TraceRecorder:
 
     def __init__(self, trace_dir: str | Path | None = None):
         if trace_dir is None:
-            hearth_dir = os.environ.get("HEARTH_HOME", os.path.expanduser("~/.hearth"))
-            self.trace_dir = Path(hearth_dir) / "traces"
+            env_trace_dir = os.environ.get("HEARTH_TRACE_DIR")
+            if env_trace_dir:
+                self.trace_dir = Path(env_trace_dir)
+            else:
+                hearth_dir = os.environ.get("HEARTH_HOME", os.path.expanduser("~/.hearth"))
+                self.trace_dir = Path(hearth_dir) / "traces"
         else:
             self.trace_dir = Path(trace_dir)
         self.trace_dir.mkdir(parents=True, exist_ok=True)

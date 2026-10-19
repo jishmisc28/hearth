@@ -10,7 +10,7 @@ Stock agent implementations systematically defeat prompt caching across all majo
 
 Applying **Hearth Optimize** relocates volatile elements out of the prefix, stabilizes tool definitions, and enforces content-addressed offloading without altering model behavior.
 
-- **Overall Cost Reduction:** **44.9%** across all evaluated frameworks and providers.
+- **Overall Cost Reduction:** **42.0%** across all evaluated frameworks and providers.
 - **Cache Read Share:** Increased from **0.0%** (Stock typical) to **48.9%** overall session average (with 100% prefix read hits on subsequent turns).
 - **Task Success Rate:** **100%** (20/20 tasks passed across all frameworks, zero degradation).
 - **Simulator Calibration Error:** **0.00 points MAE** on hold-out sessions (target: ≤ ±5.0 points).
@@ -21,14 +21,14 @@ Applying **Hearth Optimize** relocates volatile elements out of the prefix, stab
 
 | Provider | Framework | Tasks | Stock Read % | Stock Cost ($) | Optimize Read % | Optimize Cost ($) | Cost Reduction | Pass Rate |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Google Gemini (gemini-2.5-flash) | Custom Loop | 20 | 0.0% | $0.0300 | 48.9% | $0.0167 | **44.5%** | 100% |
-| Google Gemini (gemini-2.5-flash) | Pydantic Ai | 20 | 0.0% | $0.0300 | 48.9% | $0.0167 | **44.5%** | 100% |
-| Google Gemini (gemini-2.5-flash) | Openai Agents Sdk | 20 | 0.0% | $0.0300 | 48.9% | $0.0167 | **44.5%** | 100% |
-| Google Gemini (gemini-2.5-flash) | Langgraph | 20 | 0.0% | $0.0300 | 48.9% | $0.0167 | **44.5%** | 100% |
-| OpenAI (gpt-4o) | Custom Loop | 20 | 0.0% | $0.5602 | 48.9% | $0.3083 | **45.0%** | 100% |
-| OpenAI (gpt-4o) | Pydantic Ai | 20 | 0.0% | $0.5602 | 48.9% | $0.3083 | **45.0%** | 100% |
-| OpenAI (gpt-4o) | Openai Agents Sdk | 20 | 0.0% | $0.5602 | 48.9% | $0.3083 | **45.0%** | 100% |
-| OpenAI (gpt-4o) | Langgraph | 20 | 0.0% | $0.5602 | 48.9% | $0.3083 | **45.0%** | 100% |
+| Google Gemini (gemini-2.5-flash) | Custom Loop | 20 | 0.0% | $0.0156 | 48.9% | $0.0093 | **40.5%** | 100% |
+| Google Gemini (gemini-2.5-flash) | Pydantic Ai | 20 | 0.0% | $0.0156 | 48.9% | $0.0093 | **40.5%** | 100% |
+| Google Gemini (gemini-2.5-flash) | Openai Agents Sdk | 20 | 0.0% | $0.0156 | 48.9% | $0.0093 | **40.5%** | 100% |
+| Google Gemini (gemini-2.5-flash) | Langgraph | 20 | 0.0% | $0.0156 | 48.9% | $0.0093 | **40.5%** | 100% |
+| OpenAI (gpt-4o) | Custom Loop | 20 | 0.0% | $0.3201 | 48.9% | $0.1854 | **42.1%** | 100% |
+| OpenAI (gpt-4o) | Pydantic Ai | 20 | 0.0% | $0.3201 | 48.9% | $0.1854 | **42.1%** | 100% |
+| OpenAI (gpt-4o) | Openai Agents Sdk | 20 | 0.0% | $0.3201 | 48.9% | $0.1854 | **42.1%** | 100% |
+| OpenAI (gpt-4o) | Langgraph | 20 | 0.0% | $0.3201 | 48.9% | $0.1854 | **42.1%** | 100% |
 
 ---
 

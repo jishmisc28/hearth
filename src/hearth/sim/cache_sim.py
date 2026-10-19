@@ -103,7 +103,6 @@ class CacheSimulator:
         # Cache reading logic
         if matching_tokens >= self.min_prefix and not ttl_expired:
             predicted_read = matching_tokens
-            predicted_uncached = total_input - predicted_read
         else:
             if total_input < self.min_prefix:
                 cause = "below_minimum"
@@ -112,13 +111,15 @@ class CacheSimulator:
             elif matching_tokens < self.min_prefix and self.cached_prefix_hashes:
                 cause = "volatile_in_prefix"
 
-        # Update cached prefix state
-        # In Gemini implicit mode, the entire input becomes cached if >= min_prefix
+        # Update cached prefix state and token accounting (INV-06: read + write + uncached == total_input)
         if total_input >= self.min_prefix:
             predicted_write = total_input - predicted_read
+            predicted_uncached = 0
             self.cached_prefix_tokens = list(token_blocks)
             self.cached_prefix_hashes = list(hash_blocks)
         else:
+            predicted_write = 0
+            predicted_uncached = total_input
             self.cached_prefix_tokens = []
             self.cached_prefix_hashes = []
 

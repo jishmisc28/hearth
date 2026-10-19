@@ -219,6 +219,12 @@ def cmd_guard(args: argparse.Namespace) -> int:
 
 def cmd_bench(args: argparse.Namespace) -> int:
     """Run benchmark suite and generate Cache Efficiency Report."""
+    cwd = Path.cwd()
+    if str(cwd) not in sys.path:
+        sys.path.insert(0, str(cwd))
+    if str(cwd / "src") not in sys.path:
+        sys.path.insert(0, str(cwd / "src"))
+
     from bench.m4.runner import run_m4_benchmark
 
     summary = run_m4_benchmark()

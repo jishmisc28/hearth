@@ -1,4 +1,5 @@
 import json
+import sys
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -134,4 +135,20 @@ def test_cli_guard(tmp_path: Path) -> None:
 
     # 1. Clean run passes
     exit_code = main(["guard", "--baseline", str(baseline_dir), "--run", "true"])
+    assert exit_code == 0
+
+    # 2. Regression run fails when user-caused break is produced
+    # Command writes a trace with user_caused break to $HEARTH_TRACE_DIR
+    bad_cmd = (
+        f"{sys.executable} -c 'import os, json, pathlib; "
+        'p = pathlib.Path(os.environ["HEARTH_TRACE_DIR"]) / "agent.jsonl"; '
+        'p.write_text(json.dumps({"call": 1, "breaks": [{"cause": "volatile_in_prefix", "user_caused": True, "level": "system"}]}))\''
+    )
+    exit_code_bad = main(["guard", "--baseline", str(baseline_dir), "--run", bad_cmd])
+    assert exit_code_bad == 1
+
+
+def test_cli_bench() -> None:
+    """Verifies that hearth bench --report executes and generates report."""
+    exit_code = main(["bench", "--report"])
     assert exit_code == 0
