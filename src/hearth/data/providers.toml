@@ -1,0 +1,99 @@
+# Provider caching parameters, pricing, and invalidation rules.
+# Each entry is sourced and dated. Never hard-code these values in code.
+# Date: 2026-10-19
+
+[providers.gemini]
+name = "Google Gemini"
+source_url = "https://ai.google.dev/gemini-api/docs/caching"
+source_date = "2026-10-19"
+caching_mode = "implicit_and_explicit"
+default_ttl_seconds = 3600
+min_prefix_tokens = 2048
+read_multiplier = 0.10
+write_multiplier = 1.00
+usage_cached_tokens_field = "cachedContentTokenCount"
+usage_total_input_field = "promptTokenCount"
+usage_output_field = "candidatesTokenCount"
+
+[providers.gemini.models."gemini-2.5-flash"]
+input_price_per_million = 0.15
+output_price_per_million = 0.60
+min_prefix_tokens = 2048
+read_multiplier = 0.10
+write_multiplier = 1.00
+
+[providers.gemini.models."gemini-2.0-flash"]
+input_price_per_million = 0.10
+output_price_per_million = 0.40
+min_prefix_tokens = 2048
+read_multiplier = 0.10
+write_multiplier = 1.00
+
+[providers.gemini.models."gemini-1.5-flash"]
+input_price_per_million = 0.075
+output_price_per_million = 0.30
+min_prefix_tokens = 2048
+read_multiplier = 0.10
+write_multiplier = 1.00
+
+[providers.anthropic]
+name = "Anthropic"
+source_url = "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+source_date = "2026-10-19"
+caching_mode = "explicit_breakpoints"
+default_ttl_seconds = 300
+long_ttl_seconds = 3600
+min_prefix_tokens = 1024
+max_breakpoints = 4
+lookback_blocks = 20
+read_multiplier = 0.10
+write_multiplier_5m = 1.25
+write_multiplier_1h = 2.00
+usage_cache_read_field = "cache_read_input_tokens"
+usage_cache_creation_field = "cache_creation_input_tokens"
+usage_total_input_field = "input_tokens"
+usage_output_field = "output_tokens"
+levels = ["tools", "system", "messages"]
+
+[providers.anthropic.models."claude-3-5-sonnet-20241022"]
+input_price_per_million = 3.00
+output_price_per_million = 15.00
+min_prefix_tokens = 1024
+read_multiplier = 0.10
+write_multiplier = 1.25
+
+[providers.anthropic.models."claude-3-5-haiku-20241022"]
+input_price_per_million = 0.80
+output_price_per_million = 4.00
+min_prefix_tokens = 512
+read_multiplier = 0.10
+write_multiplier = 1.25
+
+[providers.openai]
+name = "OpenAI"
+source_url = "https://developers.openai.com/api/docs/guides/prompt-caching"
+source_date = "2026-10-19"
+caching_mode = "automatic_prefix"
+default_ttl_seconds = 1800
+min_prefix_tokens = 1024
+max_breakpoints = 4
+read_multiplier = 0.10
+write_multiplier = 1.25
+usage_cache_read_field = "input_tokens_details.cached_tokens"
+usage_cache_write_field = "cache_write_tokens"
+usage_total_input_field = "prompt_tokens"
+usage_output_field = "completion_tokens"
+
+[providers.openai.models."gpt-4o"]
+input_price_per_million = 2.50
+output_price_per_million = 10.00
+min_prefix_tokens = 1024
+read_multiplier = 0.10
+write_multiplier = 1.25
+
+[providers.openai.models."gpt-4o-mini"]
+input_price_per_million = 0.15
+output_price_per_million = 0.60
+min_prefix_tokens = 1024
+read_multiplier = 0.10
+write_multiplier = 1.25

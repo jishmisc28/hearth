@@ -16,7 +16,13 @@ Append only. Format: ID · date · decision · why · reversal trigger. OPEN row
 | D-09 | PROPOSED | Make the repo public and tag `0.1.0a1` at the M1 gate | External `diagnose` runs and build-in-public posts need an installable package | Abhranshu says no → public at launch; move GTM week-6 targets to week 10 |
 | D-10 | (M1) | OTel attribute names for cache read and cache write, verified against the current GenAI registry | Naming is in flux (`cache_write` vs `cache_creation`) | — |
 | D-11 | (M0) | Exact model IDs for the kill test, recorded before any run | Pre-registration | — |
+| D-01-R | 2026-10-19 | Resolves D-01: GitHub owner is `jishmisc28` (origin repo `https://github.com/jishmisc28/hearth.git`) | User instruction | Abhranshu reassigns |
+| D-02-R | 2026-10-19 | Resolves D-02: API budget approved at $25 for M0 + nightly contract tests, plus $30 for GTM; tracked in `docs/BENCH.md` | User instruction; live measurements cost money | Budget exceeded or increased |
+| D-09-R | 2026-10-19 | Resolves D-09: Ask Abhranshu at M1 gate whether to make repo public and tag `0.1.0a1` | User instruction | M1 gate reached |
+| D-11-R | 2026-10-19 | Resolves D-11: M0 pre-registered models: Gemini models only (`gemini-2.5-flash` / `gemini-2.0-flash` / `gemini-1.5-flash`) | User instruction: no Claude models; use Gemini family only | User changes model directive |
+| D-12 | 2026-10-19 | Sole use of Gemini family models for all agent, subagent, and LLM calls | User instruction: DO NOT use Claude models; use LLM models from your family only | User instruction |
 
 ## Ideas (not scheduled)
 
 (One line each. Nothing here is built without a new D-entry.)
+
