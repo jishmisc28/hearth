@@ -167,6 +167,25 @@ def test_memory_no_session_mutation() -> None:
     """INV-12: Mid-session memory writes never change SESSION."""
 
 
-@pytest.mark.skip(reason="INV-13 scheduled for M1")
 def test_cost_decimal() -> None:
     """INV-13: Money is computed in Decimal, never float."""
+    from decimal import Decimal
+
+    from hearth.cost import compute_call_cost
+
+    cost = compute_call_cost(
+        provider="gemini",
+        model="gemini-2.5-flash",
+        read_tokens=10000,
+        write_tokens=0,
+        uncached_tokens=2000,
+        output_tokens=500,
+    )
+
+    assert isinstance(cost.actual_cost, Decimal)
+    assert isinstance(cost.uncached_baseline, Decimal)
+    assert isinstance(cost.savings_amount, Decimal)
+    assert isinstance(cost.cost_ratio, Decimal)
+    # Check that savings are positive and cost_ratio < 1
+    assert cost.savings_amount > Decimal("0")
+    assert cost.cost_ratio < Decimal("1")
