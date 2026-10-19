@@ -22,6 +22,7 @@ Append only. Format: ID · date · decision · why · reversal trigger. OPEN row
 | D-11-R | 2026-10-19 | Resolves D-11: M0 pre-registered models: Gemini models only (`gemini-2.5-flash` / `gemini-2.0-flash` / `gemini-1.5-flash`) | User instruction: no Claude models; use Gemini family only | User changes model directive |
 | D-12 | 2026-10-19 | Sole use of Gemini family models for all agent, subagent, and LLM calls | User instruction: DO NOT use Claude models; use LLM models from your family only | User instruction |
 | D-13 | 2026-10-19 | Include `tomli>=1.1.0;python_version<'3.11'` in core dependencies | Python 3.10 lacks `tomllib` in stdlib; on Python 3.11+ zero external dependencies are installed, preserving D-03 | Drop Python 3.10 support |
+| D-09-R2 | 2026-10-19 | Resolves D-09: Repository confirmed public on GitHub (`jishmisc28/hearth`); tag `0.1.0a1` created and pushed | Abhranshu approved at M1 gate ("yes to 1") | — |
 
 ## Ideas (not scheduled)
 

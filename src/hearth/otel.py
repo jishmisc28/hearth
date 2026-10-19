@@ -11,7 +11,7 @@ _tracer = None
 
 try:
     _trace_mod = importlib.import_module("opentelemetry.trace")
-    _tracer = _trace_mod.get_tracer("hearth", "0.1.0a0")
+    _tracer = _trace_mod.get_tracer("hearth", "0.1.0a1")
 except Exception:
     pass
 

@@ -9,7 +9,7 @@ from typing import Literal, TypeVar
 
 from hearth.trace import TraceRecorder, get_trace_recorder
 
-__version__ = "0.1.0a0"
+__version__ = "0.1.0a1"
 __all__ = [
     "wrap",
     "session",
