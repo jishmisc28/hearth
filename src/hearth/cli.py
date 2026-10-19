@@ -37,20 +37,33 @@ def cmd_report(args: argparse.Namespace) -> int:
     trace_path = Path(hearth_dir) / "traces" / f"{session_id}.jsonl"
 
     breaks_list: list[dict[str, Any]] = []
+    changes_list: list[dict[str, Any]] = []
     if trace_path.exists():
         with open(trace_path, encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     call_entry = json.loads(line)
+                    c_num = call_entry.get("call", 1)
                     for b in call_entry.get("breaks", []):
-                        b["call"] = call_entry.get("call", 1)
+                        b["call"] = c_num
                         breaks_list.append(b)
+                    for ch in call_entry.get("changes", []):
+                        ch["call"] = c_num
+                        changes_list.append(ch)
 
     print(f"\nSession Report: {session_id}")
     print(
         f"calls {tot_calls} · input {tot_in:,} tok · read {tot_read:,} ({read_share_pct:.1f}%) · written {tot_write:,} · uncached {tot_uncached:,} · output {tot_out:,}"
     )
     print(f"total cost: ${cost_usd} USD")
+
+    if changes_list:
+        print(f"\ntransformations ({len(changes_list)}):")
+        for ch in changes_list:
+            c = ch.get("call", "?")
+            kind = ch.get("kind", "unknown")
+            desc = ch.get("details", "") or ch.get("description", "")
+            print(f"  call {c:<4} {kind:<22} {desc}")
 
     if breaks_list:
         print(f"\nprefix breaks ({len(breaks_list)}):")

@@ -226,3 +226,9 @@ def run_m2_benchmark() -> dict[str, Any]:
         },
         "compaction_study": compaction_study,
     }
+
+
+if __name__ == "__main__":
+    import json
+
+    print(json.dumps(run_m2_benchmark(), indent=2))
