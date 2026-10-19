@@ -1,0 +1,124 @@
+# Hearth Prompt Cache Break Taxonomy and Cause Registry (BUILD_HANDBOOK §5.2)
+# Version: 1.0.0
+# Last Updated: 2026-10-19
+
+breaks:
+  - id: 1
+    code: below_minimum
+    detected_when: "Prefix is shorter than the model's cache minimum threshold"
+    user_caused: false
+    level: system
+    fix_hearth_offers: "None needed; caching is automatically skipped for sub-threshold calls"
+    description: "Providers impose a minimum token threshold before caching activates (e.g. 1024 or 2048 tokens). Sub-minimum requests cannot be cached."
+
+  - id: 2
+    code: short_session
+    detected_when: "Session ended before any prompt cache reuse occurred"
+    user_caused: false
+    level: system
+    fix_hearth_offers: "The planner skips expensive write premiums when it predicts a single-shot session"
+    description: "Single-turn requests that write to cache without subsequent reuse waste cache write fees."
+
+  - id: 3
+    code: ttl_expired
+    detected_when: "Prefix is identical, but elapsed time between consecutive calls exceeded provider TTL"
+    user_caused: false
+    level: system
+    fix_hearth_offers: "1-hour TTL on stable breakpoints or application expect_pause() hints"
+    description: "Provider cache entries evict after idle periods (e.g. 5 minutes on Anthropic/Gemini). Long pauses between turns cause cold evictions."
+
+  - id: 4
+    code: provider_miss
+    detected_when: "Identical prefix sent within TTL window, but provider reported 0 read tokens"
+    user_caused: false
+    level: system
+    fix_hearth_offers: "Recorded as provider failure; never attributed as an application error"
+    description: "Backend provider cache node evictions or routing across uncoordinated cluster replicas."
+
+  - id: 5
+    code: params_changed
+    detected_when: "Model name, tool_choice, thinking effort, response format, or parallel_tool_calls changed"
+    user_caused: true
+    level: system
+    fix_hearth_offers: "Maintain stable parameters per session; switch models via dedicated subagents"
+    description: "Provider prompt caches are partitioned by exact model and decoding configuration. Changing temperature or model mid-session resets cache."
+
+  - id: 6
+    code: tools_changed
+    detected_when: "Tool definitions, schemas, or tool count differ from the session baseline"
+    user_caused: true
+    level: tools
+    fix_hearth_offers: "Declare full tool suite at session start; use tool_addition where supported"
+    description: "Adding, removing, or editing tool JSON schemas alters prefix bytes preceding the system and dialogue turns."
+
+  - id: 7
+    code: tools_reordered
+    detected_when: "The exact same set of tools is provided, but in a different permutation"
+    user_caused: true
+    level: tools
+    fix_hearth_offers: "Hearth safe mode automatically restores tools into their first-seen order"
+    description: "Dict iteration non-determinism or dynamic list assembly scrambles tool order, busting byte-exact prefix caches."
+
+  - id: 8
+    code: volatile_in_prefix
+    detected_when: "Differing bytes match a volatile pattern (timestamp, ISO date, UUID, counter, git hash)"
+    user_caused: true
+    level: system
+    fix_hearth_offers: "Hearth volatile() marker, or Hearth optimize mode automatically relocates volatile elements to the user turn tail"
+    description: "Prepending timestamps or session IDs at byte 0 invalidates the entire subsequent system prompt and conversation history."
+
+  - id: 9
+    code: system_changed
+    detected_when: "System prompt instructions changed mid-session"
+    user_caused: true
+    level: system
+    fix_hearth_offers: "Append runtime updates as user notes, or move mutable instructions to conversation tail"
+    description: "Modifying instructions inside the system prompt resets the entire prompt cache from the point of change."
+
+  - id: 10
+    code: session_mutated
+    detected_when: "A SESSION segment changed mid-conversation (e.g. dynamic memory fact injection)"
+    user_caused: true
+    level: session
+    fix_hearth_offers: "Queue facts for user turn tail; promote to SESSION on subsequent sessions"
+    description: "Injecting memory facts into early session blocks alters the prefix for all subsequent turns."
+
+  - id: 11
+    code: image_toggled
+    detected_when: "An image was added, modified, or removed earlier in prompt history"
+    user_caused: true
+    level: messages
+    fix_hearth_offers: "Place multimodal media only in the specific turn that requires visual analysis"
+    description: "Multimodal tokens alter early prefix alignment and token offsets."
+
+  - id: 12
+    code: history_rewritten
+    detected_when: "An earlier dialogue message differs (trimming, naive sliding window, content edit)"
+    user_caused: true
+    level: messages
+    fix_hearth_offers: "Maintain append-only message history, or execute Hearth planned compaction"
+    description: "Sliding window trimming drops message 0, changing prefix byte 0 and causing 100% cache invalidation."
+
+  - id: 13
+    code: no_breakpoints
+    detected_when: "Provider requires explicit breakpoint markers (e.g. Anthropic) and none were set"
+    user_caused: true
+    level: system
+    fix_hearth_offers: "Hearth safe mode automatically plans and injects optimal cache breakpoints"
+    description: "Without cache_control breakpoints, explicit caching providers treat requests as un-cached."
+
+  - id: 14
+    code: metadata_dropped
+    detected_when: "Application set cache metadata, but framework dropped it before API dispatch"
+    user_caused: false
+    level: system
+    fix_hearth_offers: "Flagged with agent framework version for upstream bug reporting"
+    description: "Certain framework middleware strips vendor-specific fields during serialization."
+
+  - id: 15
+    code: cold_subagent
+    detected_when: "A spawned subagent session begins with a completely cold prefix"
+    user_caused: false
+    level: system
+    fix_hearth_offers: "Share a common stable system/tool prefix with the parent agent"
+    description: "Ephemeral subagent tasks incur cold start writes unless designed to share prefix geometry."
