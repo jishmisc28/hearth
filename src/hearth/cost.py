@@ -64,9 +64,17 @@ def get_model_pricing(provider: str, model: str) -> ModelPricing:
     provider_info = providers_dict[provider]
     models_dict = provider_info.get("models", {})
     if model not in models_dict:
-        raise KeyError(
-            f"Model '{model}' not configured for provider '{provider}' in providers.toml. Configured models: {list(models_dict.keys())}"
-        )
+        # Cross-provider model lookup fallback
+        for alt_prov, alt_info in providers_dict.items():
+            if model in alt_info.get("models", {}):
+                provider = alt_prov
+                provider_info = alt_info
+                models_dict = alt_info.get("models", {})
+                break
+        else:
+            raise KeyError(
+                f"Model '{model}' not configured for provider '{provider}' in providers.toml. Configured models: {list(models_dict.keys())}"
+            )
 
     model_info = models_dict[model]
 
