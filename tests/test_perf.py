@@ -52,15 +52,11 @@ def test_nfr1_safe_mode_latency_budget() -> None:
         wrapper._process_safe_request(kwargs, "perf-session")
 
     durations_ms: list[float] = []
-    gc.disable()
-    try:
-        for _ in range(100):
-            t0 = time.perf_counter()
-            wrapper._process_safe_request(kwargs, "perf-session")
-            t1 = time.perf_counter()
-            durations_ms.append((t1 - t0) * 1000.0)
-    finally:
-        gc.enable()
+    for _ in range(100):
+        t0 = time.perf_counter()
+        wrapper._process_safe_request(kwargs, "perf-session")
+        t1 = time.perf_counter()
+        durations_ms.append((t1 - t0) * 1000.0)
 
     durations_ms.sort()
     n = len(durations_ms)

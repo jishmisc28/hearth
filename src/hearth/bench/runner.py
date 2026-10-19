@@ -9,6 +9,7 @@ import sys
 from bench.m0.runner import run_m0_kill_test
 from bench.m2.runner import run_m2_benchmark
 from bench.m3.runner import run_m3_benchmark
+from bench.m4.runner import run_m4_benchmark
 
 
 def main() -> None:
@@ -16,6 +17,10 @@ def main() -> None:
     parser.add_argument("--m0", action="store_true", help="Run M0 kill test suite")
     parser.add_argument("--m2", action="store_true", help="Run M2 benchmark suite")
     parser.add_argument("--m3", action="store_true", help="Run M3 benchmark suite")
+    parser.add_argument("--m4", action="store_true", help="Run M4 benchmark suite")
+    parser.add_argument(
+        "--report", action="store_true", help="Generate/freeze Cache Efficiency Report"
+    )
     parser.add_argument("--verify", action="store_true", help="Verify gate conditions")
     args = parser.parse_args()
 
@@ -49,8 +54,18 @@ def main() -> None:
             else:
                 print("\n[VERIFICATION FAILED] M3 Benchmark Gate conditions not met")
                 sys.exit(1)
+    elif args.m4 or args.report:
+        m4_summary = run_m4_benchmark()
+        print("\n" + json.dumps(m4_summary, indent=2))
+        if args.verify:
+            if m4_summary.get("gate_verified", False):
+                print("\n[VERIFICATION PASSED] M4 Benchmark Gate: VERIFIED")
+                sys.exit(0)
+            else:
+                print("\n[VERIFICATION FAILED] M4 Benchmark Gate conditions not met")
+                sys.exit(1)
     else:
-        print("Hearth Benchmark Runner: specify --m0, --m2, or --m3.")
+        print("Hearth Benchmark Runner: specify --m0, --m2, --m3, or --m4.")
 
 
 if __name__ == "__main__":

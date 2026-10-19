@@ -134,6 +134,101 @@ def cmd_diagnose(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_replay(args: argparse.Namespace) -> int:
+    """Replay session trace through simulator under observe, safe, and optimize modes."""
+    from hearth.replay import format_replay_table, replay_trace_file
+
+    trace_file = Path(args.trace_file)
+    if not trace_file.exists():
+        print(f"Error: Trace file '{trace_file}' does not exist.")
+        return 1
+
+    modes = [m.strip() for m in args.modes.split(",") if m.strip()]
+    provider = getattr(args, "provider", "gemini")
+    model = getattr(args, "model", "gemini-2.5-flash")
+
+    summaries = replay_trace_file(
+        trace_path=trace_file,
+        modes=modes,
+        provider=provider,
+        model=model,
+    )
+    print(format_replay_table(summaries))
+    return 0
+
+
+def cmd_guard(args: argparse.Namespace) -> int:
+    """Run tests and check for regression in prefix cache stability against baseline."""
+    import subprocess
+    import tempfile
+
+    baseline_path = Path(args.baseline) if args.baseline else None
+    run_cmd = args.run
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        env = dict(os.environ)
+        env["HEARTH_TRACE_DIR"] = tmp_dir
+        print(f"[Hearth Guard] Executing test suite: {run_cmd}")
+        res = subprocess.run(run_cmd, shell=True, env=env)
+        if res.returncode != 0:
+            print(f"[Hearth Guard] Command failed with exit code {res.returncode}")
+            return res.returncode
+
+        # Collect user-caused breaks from newly generated traces
+        new_breaks: list[dict[str, Any]] = []
+        for trace_file in Path(tmp_dir).glob("*.jsonl"):
+            with open(trace_file, encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        call = json.loads(line)
+                        for b in call.get("breaks", []):
+                            if b.get("user_caused", True):
+                                new_breaks.append(b)
+
+        # Collect baseline breaks
+        baseline_breaks: list[dict[str, Any]] = []
+        if baseline_path and baseline_path.exists():
+            base_files = (
+                [baseline_path] if baseline_path.is_file() else list(baseline_path.glob("*.jsonl"))
+            )
+            for trace_file in base_files:
+                with open(trace_file, encoding="utf-8") as f:
+                    for line in f:
+                        if line.strip():
+                            call = json.loads(line)
+                            for b in call.get("breaks", []):
+                                if b.get("user_caused", True):
+                                    baseline_breaks.append(b)
+
+        # Check for regressions
+        if len(new_breaks) > len(baseline_breaks):
+            print(
+                f"\n[Hearth Guard FAILED] Detected {len(new_breaks)} user-caused prefix breaks (baseline had {len(baseline_breaks)}):"
+            )
+            for b in new_breaks:
+                print(
+                    f"  cause: {b.get('cause')} · level: {b.get('level')} · details: {b.get('details')}"
+                )
+            return 1
+
+        print(
+            f"\n[Hearth Guard PASSED] All sessions verified. {len(new_breaks)} user-caused breaks detected."
+        )
+        return 0
+
+
+def cmd_bench(args: argparse.Namespace) -> int:
+    """Run benchmark suite and generate Cache Efficiency Report."""
+    from bench.m4.runner import run_m4_benchmark
+
+    summary = run_m4_benchmark()
+    if args.report:
+        print(f"\n[Cache Efficiency Report generated and frozen at {summary.get('report_file')}]")
+        print(f"Overall Cost Reduction: {summary.get('overall_savings_pct')}%")
+        print(f"Calibration MAE: {summary.get('calibration_holdout_mae_points')} points")
+    return 0 if summary.get("gate_verified", False) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="hearth", description="Hearth context engine CLI")
     subparsers = parser.add_subparsers(dest="command")
@@ -149,12 +244,42 @@ def main(argv: list[str] | None = None) -> int:
     p_diagnose = subparsers.add_parser("diagnose", help="Diagnose cache breaks in a trace file")
     p_diagnose.add_argument("trace_file", help="Path to session .jsonl trace file")
 
+    # replay
+    p_replay = subparsers.add_parser(
+        "replay", help="Replay session trace through simulator across modes"
+    )
+    p_replay.add_argument("trace_file", help="Path to session .jsonl trace file")
+    p_replay.add_argument(
+        "--modes",
+        default="observe,safe,optimize",
+        help="Comma-separated modes to replay (default: observe,safe,optimize)",
+    )
+    p_replay.add_argument("--provider", default="gemini", help="Provider to simulate")
+    p_replay.add_argument("--model", default="gemini-2.5-flash", help="Model to simulate")
+
+    # guard
+    p_guard = subparsers.add_parser("guard", help="Check test runs against baseline cache breaks")
+    p_guard.add_argument("--baseline", default=None, help="Directory or file with baseline traces")
+    p_guard.add_argument("--run", required=True, help="Command to run agent test suite")
+
+    # bench
+    p_bench = subparsers.add_parser("bench", help="Run benchmark suite")
+    p_bench.add_argument(
+        "--report", action="store_true", help="Generate/freeze Cache Efficiency Report"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "report":
         return cmd_report(args)
     elif args.command == "diagnose":
         return cmd_diagnose(args)
+    elif args.command == "replay":
+        return cmd_replay(args)
+    elif args.command == "guard":
+        return cmd_guard(args)
+    elif args.command == "bench":
+        return cmd_bench(args)
     else:
         parser.print_help()
         return 0

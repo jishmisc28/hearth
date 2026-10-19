@@ -72,3 +72,46 @@ def test_compute_calibration_mae() -> None:
     mae = compute_calibration_mae(actual, pred)
     # abs diffs: 5, 5, 2 -> mean = 4.0 points
     assert abs(mae - 4.0) < 0.001
+
+
+def test_simulator_holdout_calibration_target() -> None:
+    """M4 Gate requirement: Simulator calibration within +-5 points on holdout."""
+    from bench.m0.arms import _execute_agent_simulation
+    from bench.tasks.registry import get_all_tasks
+
+    tasks = get_all_tasks()
+    # Split into 10 train, 10 hold-out
+    holdout_tasks = tasks[10:]
+    assert len(holdout_tasks) == 10
+
+    actual_shares: list[float] = []
+    pred_shares: list[float] = []
+
+    for task in holdout_tasks:
+        for template in ["typical", "minimal"]:
+            res = _execute_agent_simulation(
+                task=task,
+                arm="A",
+                template=template,
+                replication=1,
+                min_prefix_tokens=2048,
+            )
+            actual_shares.append(res.read_share)
+
+            # Replay through CacheSimulator
+            sim = CacheSimulator(provider="gemini", model="gemini-2.5-flash")
+            call_shares: list[float] = []
+            for idx, step in enumerate(res.steps, start=1):
+                sim_res = sim.simulate_call(
+                    call_index=idx,
+                    messages=step.messages,
+                    tools=task.tools,
+                    system=step.system_prompt,
+                    ts=100.0 + idx * 10.0,
+                )
+                call_shares.append(sim_res.predicted_read_share)
+            pred_session_share = sum(call_shares) / len(call_shares) if call_shares else 0.0
+            pred_shares.append(pred_session_share)
+
+    mae = compute_calibration_mae(actual_shares, pred_shares)
+    assert mae <= 5.0, f"Simulator calibration target missed: {mae:.2f} points (> 5.0 points)"
