@@ -12,8 +12,8 @@ Ship Hearth v0.1: an embeddable context engine that keeps an AI agent's prompt c
 | M2: Optimize policies: relocation, offloading, and planned compaction | Proven | docs/STATUS.md | — | No |
 | M3: Framework integrations (Pydantic AI, Agents SDK, LangGraph) | Proven | docs/STATUS.md | — | No |
 | M4: Replay CLI, simulator v1, and Cache Efficiency Report data freeze | Proven | docs/REPORT.md | — | No |
-| M5: Memory v0 with temporal facts and write checks | Building | — | — | No |
-| M6: Switch-or-stay router and TTL optimizer | Defined | — | M5 | No |
+| M5: Memory v0 with temporal facts and write checks | Proven | docs/STATUS.md | — | No |
+| M6: Switch-or-stay router and TTL optimizer | Building | — | — | No |
 | M7: Hardening, public benchmark reproduction, and v0.1 release | Defined | — | M6 | YES (Release approval) |
 
 ## 3. Parked
@@ -24,4 +24,4 @@ Ship Hearth v0.1: an embeddable context engine that keeps an AI agent's prompt c
 None.
 
 ## 5. Last Updated
-2026-10-19 · 4129989
+2026-10-19 · 3a77018

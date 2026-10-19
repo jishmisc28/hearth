@@ -9,21 +9,41 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M2 optimize policies | VERIFIED | 2026-10-19 | C-05, C-09 |
 | M3 framework integrations | VERIFIED | 2026-10-19 | C-06, C-07 |
 | M4 simulator & replay CLI | VERIFIED | 2026-10-19 | C-07, C-08 |
-| M5 memory v0 | DEFINED | — | — |
+| M5 memory v0 | VERIFIED | 2026-10-19 | INV-12, memory safety |
+| M6 switch-or-stay | IN PROGRESS | — | C-11 |
 
-## Plan: M5 Memory v0 (Temporal Facts, Write Checks, Cache-Friendly Placement)
+## Plan: M6 Switch-or-Stay Router and TTL Optimizer
 Tasks:
-1. `src/hearth/memory/store.py`: SQLite `facts` schema with scope, subject, predicate, value, valid_from, valid_to, superseded_by, source, tainted (`INV-12`). Done when `test_memory_supersede` passes.
-2. `src/hearth/memory/checks.py`: Write checks (size <= 2000 chars, secrets pattern detection, instruction injection rejection, tainted quarantine). Done when memory write check tests pass.
-3. `src/hearth/memory/recall.py`: SQLite FTS5 recall and session pinning (`hearth.memory.remember`, `recall`, `pin`). Mid-session writes visible only in turn tail; pinned facts loaded once at session start into SESSION (`INV-12`). Done when `test_memory_no_session_mutation` passes.
-4. `bench/m5/`: Multi-session memory tasks evaluation across 5 tasks. Done when memory tasks pass.
+1. `src/hearth/policies/route.py`: Closed-form router evaluating stay vs switch vs delegate across models using exact pricing ($q = p_B/p_A < 1 \implies n > \frac{q \cdot w}{r \cdot (1 - q)}$) and output token expectations. Done when unit and property tests pass.
+2. `src/hearth/planner.py`: TTL optimizer dynamically selecting 1-hour vs 5-minute TTL on stable prefix breakpoints based on inter-call gap predictions ($k \ge 1$) and application hints (`s.expect_pause()`). Done when TTL selection tests pass.
+3. `bench/tasks/mixed.py` & `bench/m6/runner.py`: Mixed-difficulty benchmark tasks verifying switch-or-stay and TTL optimizations reduce cost while preserving task pass rate within the §10.1 rule. Done when M6 benchmark passes with cost savings > 0 and 100% pass rate.
+4. `src/hearth/bench/runner.py`: Add `--m6` flag and `--verify` support. Done when `python -m hearth.bench.runner --m6 --verify` passes.
 
 Gate commands:
 - `make check`
-- `pytest -v tests/test_invariants.py -k "test_memory"`
-- `python -m hearth.bench.runner --m5 --verify`
+- `pytest -v tests/test_routing.py tests/test_planner.py`
+- `python -m hearth.bench.runner --m6 --verify`
 
 ## Log
+
+## 2026-10-19 · M5 memory v0: VERIFIED
+Gate commands and output tails:
+- `make check`: `65 files already formatted; mypy --strict src/hearth: Success: no issues found in 36 source files; 44 passed, 3 deselected in 1.13s`
+- `pytest -v tests/test_invariants.py -k "test_memory"`: `2 passed in 0.44s (INV-12 test_memory_supersede, test_memory_no_session_mutation)`
+- `python -m hearth.bench.runner --m5 --verify`: `{"milestone": "M5", "gate_verified": true, "tasks_tested": 5, "tasks_passed": 5, "pass_rate_pct": 100.0}; [VERIFICATION PASSED] M5 Benchmark Gate: VERIFIED`
+Numbers: 44 passed · 100% memory task pass rate across 5 pre-registered tasks (13 sessions evaluated) · zero external dependencies · API spend this week $0.00
+What changed (user-visible first):
+- Added `src/hearth/memory/store.py` providing SQLite `facts` table with FTS5 search, full temporal superseding (`valid_from`, `valid_to`, `superseded_by`), session snapshot isolation, and untrusted tool taint quarantine.
+- Added `src/hearth/memory/checks.py` enforcing synchronous write validation: 2,000 character length limit, secrets rejection (API keys, private keys, AWS tokens), and prompt injection / instruction override pattern rejection.
+- Added `src/hearth/memory/recall.py` providing `hearth.memory.remember`, `hearth.memory.recall`, and `hearth.memory.pin`.
+- Guaranteed cache-friendly memory placement (`INV-12`): pinned facts load once at session start into SESSION prefix, while mid-session writes are placed into turn tail (volatile) without mutating active session prefix cache.
+- Added 5 pre-registered multi-session benchmark tasks in `bench/tasks/memory.py` and benchmark runner in `bench/m5/runner.py`.
+Learned (for Abhranshu):
+- `src/hearth/memory/store.py:110-160`: Storing evolving facts without breaking cache requires temporal superseding instead of overwriting or keeping contradictory rows. When a fact changes (e.g. user updates a configuration or primary key), Hearth sets `valid_to` and `superseded_by` atomically. Old facts remain queryable for audit, but active queries only retrieve the current truth.
+- `src/hearth/memory/recall.py:45-80`: Naive agent memory injects newly recalled or modified facts directly into the system prompt mid-session, completely invalidating the provider's prompt cache prefix. Hearth enforces snapshot isolation: pinned session facts are loaded once into the SESSION prefix, while mid-session updates are routed exclusively to that turn's volatile tail (`hearth.get_current_session().volatile(...)`). Only when a new session starts are updated facts promoted into the SESSION prefix.
+- `src/hearth/memory/checks.py:40-60`: Untrusted agent memory is a primary vector for prompt injection. By running strict regex validation for prompt override tokens ("ignore previous", "from now on", "system override") synchronously before writing to SQLite, Hearth prevents corrupted agent memories from poisoning future sessions.
+GTM-ready: Invariant INV-12 verified; temporal memory store with zero dependencies and cache-friendly prefix stability proven.
+Blocked on Abhranshu: nothing
 
 ## 2026-10-19 · M4 simulator & replay CLI: VERIFIED
 Gate commands and output tails:
