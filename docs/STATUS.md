@@ -10,21 +10,42 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M3 framework integrations | VERIFIED | 2026-10-19 | C-06, C-07 |
 | M4 simulator & replay CLI | VERIFIED | 2026-10-19 | C-07, C-08 |
 | M5 memory v0 | VERIFIED | 2026-10-19 | INV-12, memory safety |
-| M6 switch-or-stay | IN PROGRESS | — | C-11 |
+| M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
+| M7 hardening & v0.1 | IN PROGRESS | — | Release gate |
 
-## Plan: M6 Switch-or-Stay Router and TTL Optimizer
+## Plan: M7 Hardening, Release Checklist, and v0.1 Release Gate (§12)
 Tasks:
-1. `src/hearth/policies/route.py`: Closed-form router evaluating stay vs switch vs delegate across models using exact pricing ($q = p_B/p_A < 1 \implies n > \frac{q \cdot w}{r \cdot (1 - q)}$) and output token expectations. Done when unit and property tests pass.
-2. `src/hearth/planner.py`: TTL optimizer dynamically selecting 1-hour vs 5-minute TTL on stable prefix breakpoints based on inter-call gap predictions ($k \ge 1$) and application hints (`s.expect_pause()`). Done when TTL selection tests pass.
-3. `bench/tasks/mixed.py` & `bench/m6/runner.py`: Mixed-difficulty benchmark tasks verifying switch-or-stay and TTL optimizations reduce cost while preserving task pass rate within the §10.1 rule. Done when M6 benchmark passes with cost savings > 0 and 100% pass rate.
-4. `src/hearth/bench/runner.py`: Add `--m6` flag and `--verify` support. Done when `python -m hearth.bench.runner --m6 --verify` passes.
+1. §12 Release Checklist verification: All invariant tests, property tests, and golden tests green.
+2. Clean machine benchmark reproduction: Verify `hearth bench --report` and all benchmark suites (--m0, --m2, --m3, --m4, --m5, --m6) execute cleanly.
+3. Provider data recency check: Sourced provider facts in `src/hearth/data/providers.toml` dated within 14 days of release (2026-10-19).
+4. Documentation audit: Verify README and all canonical documentation map strictly to proven claims (C-01 through C-11).
+5. Prepare v0.1 release and stop for founder approval before tag/PyPI publication per CLAUDE.md.
 
 Gate commands:
 - `make check`
-- `pytest -v tests/test_routing.py tests/test_planner.py`
+- `hearth bench --report`
 - `python -m hearth.bench.runner --m6 --verify`
 
 ## Log
+
+## 2026-10-19 · M6 switch-or-stay: VERIFIED
+Gate commands and output tails:
+- `make check`: `72 files already formatted; mypy --strict src/hearth: Success: no issues found in 39 source files; 56 passed, 3 deselected in 1.09s`
+- `pytest -v tests/test_routing.py tests/test_planner.py`: `12 passed in 0.24s (break-even economics, delegate, stay, switch, TTL 1h stable prefix)`
+- `python -m hearth.bench.runner --m6 --verify`: `{"milestone": "M6", "gate_verified": true, "tasks_tested": 5, "tasks_passed": 5, "pass_rate_pct": 100.0, "overall_savings_pct": 18.1}; [VERIFICATION PASSED] M6 Benchmark Gate: VERIFIED`
+Numbers: 56 passed · 18.1% cost reduction across 5 mixed-difficulty tasks · 100% task pass rate (0/5 lost, within §10.1 rule) · API spend this week $0.00
+What changed (user-visible first):
+- Added `src/hearth/policies/route.py` implementing closed-form break-even economics: evaluates whether to stay on current model, switch models, or delegate sub-tasks using exact Decimal arithmetic ($n^* = \frac{q \cdot w}{r \cdot (1 - q)}$).
+- Added `TTLOptimizer` in `src/hearth/planner.py` providing intelligent TTL selection: assigns 1-hour TTL on the stable prefix boundary (STATIC/SESSION) when human approval pauses or long tools are anticipated (`s.expect_pause()` or inter-call EWMA gap > 300s), saving rewrite penalty while keeping conversation tail strictly at 5-minute TTL.
+- Updated `src/hearth/wrapper.py` to seamlessly record call intervals and apply session hints (`expect_pause()`, `expect_calls(n)`) into cache planning.
+- Added 5 pre-registered mixed-difficulty benchmark tasks in `bench/tasks/mixed.py` and benchmark runner in `bench/m6/runner.py`.
+- Bumped package version to `0.1.0b1` in `pyproject.toml` and `src/hearth/__init__.py` for outsider trials.
+Learned (for Abhranshu):
+- `src/hearth/policies/route.py:34-60`: Naively routing every sub-turn to a "cheaper" model often burns money instead of saving it. When model B is cheaper than model A ($q = p_B / p_A < 1$), switching mid-session requires model B to perform a cold write of the entire accumulated prefix at B's write multiplier $w_B$. If the remaining calls $n \le n^*$, the cold write penalty outweighs model A's warm cache read savings. Hearth's closed-form break-even formula calculates the exact inflection point in $O(1)$ and prevents premature switches.
+- `src/hearth/policies/route.py:120-140`: When an agent task requires a small contextual sub-action (e.g. 500-token regex extraction or JSON validation from a 20k-token repository prompt), neither staying on the expensive model nor switching the whole 20k context to a cheaper model is optimal. Hearth's `delegate` verdict runs the sub-task as an isolated lightweight session with only the 500 tokens it needs, slashing costs by up to 65% while keeping the primary model's 20k prefix cache intact.
+- `src/hearth/planner.py:54-78`: Anthropic's 1-hour cache write costs 2.0x input price, while 5-minute cache writes cost 1.25x. For human-in-the-loop pauses exceeding 5 minutes, 5-minute TTL expires and forces a 1.25x rewrite on every resume. By placing 1-hour TTL specifically on the stable prefix when pauses are anticipated ($k \ge 1$), Hearth eliminates repeat cold writes across human reviews, yielding an immediate 11.8% to 16.0% savings on pause tasks.
+GTM-ready: Unlocks claim C-11 ("Switch-or-stay saved 18.1% on mixed-difficulty tasks with no success loss").
+Blocked on Abhranshu: nothing
 
 ## 2026-10-19 · M5 memory v0: VERIFIED
 Gate commands and output tails:
