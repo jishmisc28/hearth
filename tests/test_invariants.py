@@ -193,9 +193,75 @@ def test_append_only(tmp_path: Path) -> None:
     assert sent_msgs_2[0]["content"] == "Message 1"
 
 
-@pytest.mark.skip(reason="INV-05 scheduled for M2")
-def test_changes_reported() -> None:
+def test_changes_reported(tmp_path: Path) -> None:
     """INV-05: Every optimize move and safe order restoration is recorded and reported."""
+    from hearth.tools import READ_OFFLOADED_TOOL_DEF
+
+    recorder = TraceRecorder(trace_dir=tmp_path)
+    underlying = MockClient()
+
+    # 1. Test safe mode tool order restoration recording
+    client_safe = hearth.wrap(underlying, mode="safe", recorder=recorder)
+    tool_a = {"name": "tool_a", "description": "a"}
+    tool_b = {"name": "tool_b", "description": "b"}
+
+    # Call 1: tool_a, tool_b
+    client_safe.create(
+        model="gemini-2.5-flash",
+        tools=[tool_a, tool_b],
+        messages=[{"role": "user", "content": "hi"}],
+        session_id="s-changes-safe",
+    )
+
+    # Call 2: reorder to tool_b, tool_a
+    client_safe.create(
+        model="gemini-2.5-flash",
+        tools=[tool_b, tool_a],
+        messages=[{"role": "user", "content": "next"}],
+        session_id="s-changes-safe",
+    )
+
+    trace_safe = recorder.read_session("s-changes-safe")
+    assert len(trace_safe) == 2
+    changes_call2 = trace_safe[1].get("changes", [])
+    assert any(c.get("kind") == "tool_order_restored" for c in changes_call2)
+
+    # 2. Test optimize mode volatile relocation and tool offload recording
+    client_opt = hearth.wrap(underlying, mode="optimize", recorder=recorder)
+    tools_with_offload = [tool_a, READ_OFFLOADED_TOOL_DEF]
+
+    # Large tool output (> 2000 tokens ~ 8000 chars)
+    large_output = "Line of database records:\n" * 600
+
+    client_opt.create(
+        model="gemini-2.5-flash",
+        system="You are an assistant.\nCurrent time: 2026-10-19T14:30:00Z\nBe helpful.",
+        tools=tools_with_offload,
+        messages=[
+            {"role": "user", "content": "fetch records"},
+            {"role": "tool", "content": large_output, "tool_call_id": "call_1"},
+        ],
+        session_id="s-changes-opt",
+    )
+
+    trace_opt = recorder.read_session("s-changes-opt")
+    assert len(trace_opt) == 1
+    changes_opt = trace_opt[0].get("changes", [])
+
+    # Must record volatile relocation
+    assert any(c.get("kind") == "volatile_relocated" for c in changes_opt)
+    # Must record output offloaded
+    assert any(c.get("kind") == "output_offloaded" for c in changes_opt)
+
+    # Verify that the sent request had volatile stripped from system prompt
+    sent_system = underlying.last_kwargs.get("system", "")
+    assert "Current time:" not in sent_system
+    assert "You are an assistant." in sent_system
+
+    # Verify that sent tool message contains stub
+    sent_messages = underlying.last_kwargs.get("messages", [])
+    assert len(sent_messages) == 2
+    assert "OFFLOADED LARGE TOOL RESULT" in sent_messages[1]["content"]
 
 
 def test_usage_reconciles_anthropic() -> None:

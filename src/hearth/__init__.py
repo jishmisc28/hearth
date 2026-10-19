@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Literal, TypeVar
 
+from hearth import tools
 from hearth.trace import TraceRecorder, get_trace_recorder
 
 __version__ = "0.1.0a1"
@@ -14,6 +15,7 @@ __all__ = [
     "wrap",
     "session",
     "volatile",
+    "tools",
     "Mode",
     "SessionContext",
     "HearthPrefixBreak",

@@ -35,6 +35,7 @@ class TraceRecorder:
         fingerprints: dict[str, list[str]] | None = None,
         usage: dict[str, Any] | None = None,
         breaks: list[dict[str, Any]] | None = None,
+        changes: list[dict[str, Any]] | None = None,
         body: dict[str, Any] | None = None,
         record_body: bool = False,
     ) -> dict[str, Any]:
@@ -66,6 +67,7 @@ class TraceRecorder:
                 "output": 0,
             },
             "breaks": breaks or [],
+            "changes": changes or [],
         }
 
         # INV-09: No prompt content in trace unless record_body=True
@@ -76,6 +78,19 @@ class TraceRecorder:
             f.write(json.dumps(entry) + "\n")
 
         return entry
+
+    def read_session(self, session_id: str) -> list[dict[str, Any]]:
+        """Read all trace entries recorded for a session."""
+        trace_path = self.trace_dir / f"{session_id}.jsonl"
+        if not trace_path.exists():
+            return []
+        entries: list[dict[str, Any]] = []
+        with open(trace_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    entries.append(json.loads(line))
+        return entries
 
 
 _default_recorder: TraceRecorder | None = None

@@ -17,6 +17,7 @@ from hearth.adapters import (
 )
 from hearth.cost import compute_call_cost
 from hearth.guard import PrefixGuard
+from hearth.layout import optimize_layout
 from hearth.ledger import Ledger
 from hearth.otel import record_span
 from hearth.planner import plan_breakpoints
@@ -55,7 +56,7 @@ class WrappedMethod:
 
     def _process_safe_request(
         self, kwargs: dict[str, Any], session_id: str
-    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
         """Safe mode request processing:
 
         - Restores first-seen tool order if reordered (INV-02)
@@ -65,6 +66,7 @@ class WrappedMethod:
         """
         mod_kwargs = copy.deepcopy(kwargs)
         breaks_list: list[dict[str, Any]] = []
+        changes_list: list[dict[str, Any]] = []
 
         # 1. Restore first-seen tool order if application reordered them
         tools = mod_kwargs.get("tools")
@@ -85,6 +87,14 @@ class WrappedMethod:
                         tool_map[name] for name in first_seen_names if name in tool_map
                     ]
                     mod_kwargs["tools"] = restored_tools
+                    changes_list.append(
+                        {
+                            "kind": "tool_order_restored",
+                            "first_seen_order": first_seen_names,
+                            "reordered_order": current_names,
+                            "details": "Restored first-seen tool order to protect prefix cache",
+                        }
+                    )
                     breaks_list.append(
                         {
                             "cause": "tools_reordered",
@@ -93,6 +103,19 @@ class WrappedMethod:
                             "details": "Restored first-seen tool order in safe mode",
                         }
                     )
+
+        # In optimize mode: optimize layout (relocate volatile system prompts, offload large tool outputs)
+        if self.mode == "optimize":
+            opt_system, opt_messages, layout_changes = optimize_layout(
+                system=mod_kwargs.get("system", ""),
+                messages=mod_kwargs.get("messages", []),
+                tools=mod_kwargs.get("tools"),
+            )
+            if opt_system != mod_kwargs.get("system", ""):
+                mod_kwargs["system"] = opt_system
+            if opt_messages != mod_kwargs.get("messages", []):
+                mod_kwargs["messages"] = opt_messages
+            changes_list.extend(layout_changes)
 
         # 2. Segment request
         messages = mod_kwargs.get("messages", [])
@@ -133,7 +156,7 @@ class WrappedMethod:
         if plan.should_cache and plan.prompt_cache_key:
             mod_kwargs["prompt_cache_key"] = plan.prompt_cache_key
 
-        return mod_kwargs, breaks_list
+        return mod_kwargs, breaks_list, changes_list
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         self._call_counter += 1
@@ -142,13 +165,16 @@ class WrappedMethod:
 
         send_kwargs = kwargs
         recorded_breaks: list[dict[str, Any]] = []
+        recorded_changes: list[dict[str, Any]] = []
 
         if self.mode == "observe":
             # INV-01: observe sends byte-identical requests
             send_kwargs = kwargs
         elif self.mode in ("safe", "optimize"):
             try:
-                send_kwargs, recorded_breaks = self._process_safe_request(kwargs, session_id)
+                send_kwargs, recorded_breaks, recorded_changes = self._process_safe_request(
+                    kwargs, session_id
+                )
             except HearthPrefixBreak:
                 raise
             except Exception as e:
@@ -251,6 +277,7 @@ class WrappedMethod:
                 "cost_usd": str(cost_info.actual_cost),
             },
             breaks=recorded_breaks,
+            changes=recorded_changes,
             body=body_to_record,
             record_body=self.record,
         )
