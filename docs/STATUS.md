@@ -7,21 +7,42 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M0 kill test | VERIFIED | 2026-10-19 | C-01, C-02 |
 | M1 in-process wrap | VERIFIED | 2026-10-19 | C-03, C-04 |
 | M2 optimize policies | VERIFIED | 2026-10-19 | C-05, C-09 |
-| M3 framework integrations | DEFINED | — | — |
+| M3 framework integrations | VERIFIED | 2026-10-19 | C-06, C-07 |
+| M4 simulator & replay CLI | DEFINED | — | — |
 
-## Plan: M3 Framework Integrations (Pydantic AI, Agents SDK, LangGraph)
+## Plan: M4 Simulator v1, Replay CLI, Cache Efficiency Report Data Freeze
 Tasks:
-1. `src/hearth/integrations/pydantic_ai.py`: Pydantic AI integration adapter for wrapped client. Done when mini-suite passes.
-2. `src/hearth/integrations/openai_agents.py`: OpenAI Agents SDK integration adapter for Responses and Chat. Done when mini-suite passes.
-3. `src/hearth/integrations/langgraph.py`: LangGraph middleware (`HearthMiddleware`). Done when mini-suite passes.
-4. Examples and test suite: Integration examples for all three frameworks in `tests/test_integrations.py`. Done when integration tests pass.
+1. `src/hearth/cli.py` & `src/hearth/replay.py`: `hearth replay <trace.jsonl> [--mode observe|safe|optimize] [--provider P]` replaying real traces through simulator policies and computing savings. Done when replay CLI tests pass.
+2. `src/hearth/sim/provider.py`: `FakeProvider` and provider cache simulator with TTL and minimum thresholds for all 3 providers. Done when INV-12 (`test_sim_matches_provider_rules`) passes.
+3. `bench/m4/freeze_report.py` & `docs/REPORT.md`: Freeze Cache Efficiency Report data across 4 frameworks × 2 providers on 20 tasks, proving break causes and cost reductions. Done when `docs/REPORT.md` is generated.
 
 Gate commands:
 - `make check`
-- `pytest -v tests/test_integrations.py`
-- `python -m hearth.bench.runner --m3 --verify`
+- `pytest -v tests/test_sim.py tests/test_cli.py`
+- `hearth replay <trace.jsonl> --mode optimize`
+- `python -m hearth.bench.runner --m4 --verify`
 
 ## Log
+
+## 2026-10-19 · M3 framework integrations: VERIFIED
+Gate commands and output tails:
+- `make check`: `53 files already formatted; mypy --strict src/hearth: Success: no issues found in 30 source files; 30 passed, 2 skipped, 3 deselected in 0.55s`
+- `pytest -v tests/test_integrations.py`: `4 passed in 0.40s; LangGraph, Pydantic AI, OpenAI Agents SDK mini-suites and observe passthrough verified`
+- `python -m hearth.bench.runner --m3 --verify`: `{"milestone": "M3", "gate_verified": true, "frameworks_tested": 3, "results": {"langgraph": {"pass_rate_pct": 100.0}, "pydantic_ai": {"pass_rate_pct": 100.0}, "openai_agents_sdk": {"pass_rate_pct": 100.0}}}; [VERIFICATION PASSED] M3 Benchmark Gate: VERIFIED`
+Numbers: 30 passed (2 skipped) · 3/3 frameworks verified · 100% mini-suite pass rate across all 3 frameworks · API spend this week $0.00
+What changed (user-visible first):
+- Added `HearthMiddleware` in `src/hearth/integrations/langgraph.py` (and alias `src/hearth/integrations/langchain.py`) providing drop-in middleware for LangGraph state graphs and LangChain callbacks: preserves input message object references in `observe` mode, restores first-seen tool order in `safe` mode, relocates volatile timestamps in `optimize` mode, and checks `PrefixGuard`.
+- Added `wrap_pydantic_ai_client` and `HearthPydanticAIModel` in `src/hearth/integrations/pydantic_ai.py` enabling zero-boilerplate prompt caching for Pydantic AI models.
+- Added `set_default_openai_client`, `get_default_openai_client`, and `wrap_agents_client` in `src/hearth/integrations/openai_agents.py` seamlessly intercepting calls made by OpenAI Agents SDK.
+- Exported all integration adapters cleanly from `hearth.integrations` without requiring external framework dependencies in core (`pyproject.toml` remains zero external dependencies).
+- Created mini-suite tests in `tests/test_integrations.py` and benchmark verification runner in `bench/m3/runner.py`.
+Learned (for Abhranshu):
+- `src/hearth/integrations/langgraph.py:47-52`: In LangGraph, message histories frequently contain framework-specific dataclasses (`HumanMessage`, `AIMessage`). In `observe` mode, Hearth must strictly pass these objects through by reference without converting them to dicts (`INV-01`), whereas in `safe`/`optimize` mode it converts and normalizes them for layout inspection and tool ordering.
+- `src/hearth/integrations/openai_agents.py:13-20`: OpenAI Agents SDK defaults to an internal client singleton unless configured via `set_default_openai_client`. By wrapping this client instance at setup, any agent created downstream inherits automatic tool order stabilization, prefix break attribution, and cache metrics with zero per-agent code changes.
+- `src/hearth/integrations/pydantic_ai.py:24-36`: Pydantic AI's model architecture encapsulates provider clients within model objects (`model.client` or `model.anthropic_client`). Dynamic property inspection allows Hearth to wrap the underlying network client directly, giving users the choice of wrapping either the client before model instantiation or the model instance itself.
+GTM-ready: Unlocks claims C-06 ("Zero code rewrites across LangGraph, Pydantic AI, and OpenAI Agents SDK") and C-07 ("Mini-suite reproduces 100% task completion while maintaining prompt cache warmth").
+Blocked on Abhranshu: nothing
+
 
 ## 2026-10-19 · M2 optimize policies: VERIFIED
 Gate commands and output tails:

@@ -10,8 +10,8 @@ Ship Hearth v0.1: an embeddable context engine that keeps an AI agent's prompt c
 | M0: Kill test proves stock frameworks waste ≥25% cache cost on real agent templates | Proven | docs/STATUS.md | — | No |
 | M1: In-process `wrap()` with guard, planner, and ledger for Gemini, Anthropic, OpenAI | Proven | docs/STATUS.md | — | No |
 | M2: Optimize policies: relocation, offloading, and planned compaction | Proven | docs/STATUS.md | — | No |
-| M3: Framework integrations (Pydantic AI, Agents SDK, LangGraph) | Building | — | — | No |
-| M4: Replay CLI, simulator v1, and Cache Efficiency Report data freeze | Defined | — | M3 | No |
+| M3: Framework integrations (Pydantic AI, Agents SDK, LangGraph) | Proven | docs/STATUS.md | — | No |
+| M4: Replay CLI, simulator v1, and Cache Efficiency Report data freeze | Building | — | — | No |
 | M5: Memory v0 with temporal facts and write checks | Defined | — | M4 | No |
 | M6: Switch-or-stay router and TTL optimizer | Defined | — | M5 | No |
 | M7: Hardening, public benchmark reproduction, and v0.1 release | Defined | — | M6 | YES (Release approval) |
@@ -24,4 +24,4 @@ Ship Hearth v0.1: an embeddable context engine that keeps an AI agent's prompt c
 None.
 
 ## 5. Last Updated
-2026-10-19 · 5b63dc5
+2026-10-19 · 2ff55c4
