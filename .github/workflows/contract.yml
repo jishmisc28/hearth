@@ -17,9 +17,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install
-        run: |
-          uv venv
-          uv pip install --python .venv/bin/python -e ".[dev,gemini,openai]"
+        run: uv pip install -e ".[dev,gemini,openai]"
       - name: Require the Gemini key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
