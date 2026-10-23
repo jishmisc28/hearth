@@ -92,15 +92,16 @@ T = TypeVar("T")
 
 def wrap(
     client: T,
-    mode: Mode = "observe",
+    mode: Mode = "safe",
     record: bool = False,
     strict: bool = False,
     recorder: TraceRecorder | None = None,
 ) -> T:
     """Wrap a provider client with Hearth context management.
 
-    In 'observe' mode (default for M0), the client makes byte-identical requests
-    and records traces and metrics with zero behaviour change.
+    The default mode is ``safe``: message and tool text stay the same.
+    Pass ``mode="observe"`` for a byte-identical first look, or
+    ``mode="optimize"`` to allow the documented layout moves.
     """
     from hearth.wrapper import WrappedClientProxy
 

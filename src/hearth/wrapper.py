@@ -327,7 +327,7 @@ class WrappedClientProxy:
     def __init__(
         self,
         target_client: Any,
-        mode: str = "observe",
+        mode: str = "safe",
         record: bool = False,
         strict: bool = False,
         recorder: TraceRecorder | None = None,

@@ -98,6 +98,12 @@ def test_fake_provider_anthropic_caching() -> None:
     assert resp2.usage.cache_read_input_tokens > 1024
 
 
+def test_wrap_default_mode_is_safe() -> None:
+    fake = FakeProvider(provider="gemini", model="gemini-2.5-flash")
+    wrapped = hearth.wrap(fake)
+    assert wrapped.mode == "safe"
+
+
 def test_fake_provider_wrapped_by_hearth() -> None:
     fake = FakeProvider(provider="gemini", model="gemini-2.5-flash")
     wrapped = hearth.wrap(fake, mode="safe")
