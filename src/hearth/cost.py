@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -45,7 +45,8 @@ def load_providers_toml(path: str | Path | None = None) -> dict[str, Any]:
         data_path = Path(path)
 
     with open(data_path, "rb") as f:
-        data = cast(dict[str, Any], tomllib.load(f))
+        loaded: Any = tomllib.load(f)
+    data = {str(key): value for key, value in loaded.items()}
 
     if path is None:
         _providers_cache = data
