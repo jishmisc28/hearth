@@ -23,6 +23,8 @@ Append only. Format: ID · date · decision · why · reversal trigger. OPEN row
 | D-12 | 2026-10-19 | Sole use of Gemini family models for all agent, subagent, and LLM calls | User instruction: DO NOT use Claude models; use LLM models from your family only | User instruction |
 | D-13 | 2026-10-19 | Include `tomli>=1.1.0;python_version<'3.11'` in core dependencies | Python 3.10 lacks `tomllib` in stdlib; on Python 3.11+ zero external dependencies are installed, preserving D-03 | Drop Python 3.10 support |
 | D-09-R2 | 2026-10-19 | Resolves D-09: Repository confirmed public on GitHub (`jishmisc28/hearth`); tag `0.1.0a1` created and pushed | Abhranshu approved at M1 gate ("yes to 1") | — |
+| D-14 | 2026-10-23 | v0.1.0 is not held for three human install trials. The Gemini evaluation the same night (LIBRARY-OK, offline checks 10/10, recorded in `hearth-v0.1-proof.html`) is the acceptance check. | Founder instruction: agents verify the library. Do not block the release on another person. | A later human trial contradicts that result |
+| D-15 | 2026-10-23 | Cut git tag `v0.1.0` on the offline gate. The five-night live contract streak starts when `GEMINI_API_KEY` is in GitHub secrets. No live saving is claimed while `docs/BENCH.md` spend is $0.00. | No provider key is available to the agents. Founder said proceed rather than wait. | A live run shows the offline behavior does not hold |
 
 ## Ideas (not scheduled)
 

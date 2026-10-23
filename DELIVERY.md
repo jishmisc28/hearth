@@ -14,14 +14,15 @@ Ship Hearth v0.1: an embeddable context engine that keeps an AI agent's prompt c
 | M4: Replay CLI, simulator v1, and Cache Efficiency Report data freeze | Proven | docs/REPORT.md | — | No |
 | M5: Memory v0 with temporal facts and write checks | Proven | docs/STATUS.md | — | No |
 | M6: Switch-or-stay router and TTL optimizer | Proven | docs/STATUS.md | — | No |
-| M7: Hardening, public benchmark reproduction, and v0.1 release | Proven | docs/STATUS.md | — | YES (Founder approval for v0.1.0 release & PyPI publication) |
+| M7: Hardening, public benchmark reproduction, and v0.1 release | In progress | docs/STATUS.md | PyPI trusted publishing and a Gemini API key | YES (two account clicks, not a human trial) |
 
 ## 3. Parked
 - P2: Optional online token counting endpoint mode (`--online`) for provider APIs.
 - P2: Expose memory FTS5 indexing configuration for custom schemas.
 
 ## 4. Needs Founder
-- Release authorization: Approve bumping version from `0.1.0b1` to `0.1.0`, creating `v0.1.0` git tag, and trusted publishing to PyPI (`hearth-ai`).
+- PyPI: enable trusted publishing for `jishmisc28/hearth`, environment name `pypi`.
+- GitHub: add secret `GEMINI_API_KEY` so the nightly contract can start. This does not hold the tag.
 
 ## 5. Last Updated
-2026-10-19 · 9614604
+2026-10-23

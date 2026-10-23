@@ -11,17 +11,29 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M4 simulator & replay CLI | VERIFIED | 2026-10-19 | C-07, C-08 |
 | M5 memory v0 | VERIFIED | 2026-10-19 | INV-12, memory safety |
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
-| M7 hardening & v0.1 | PENDING-HUMAN | 2026-10-19 | Release gate (C-01 to C-11) |
+| M7 hardening & v0.1 | IN PROGRESS | 2026-10-23 | Release gate (C-01 to C-11) |
 
-## Plan: v0.1 Release Gate Approval (BUILD_HANDBOOK §12)
-Codebase is hardened, verified, benchmarked, and ready. Awaiting Abhranshu's approval for PyPI publication and release tag.
-
-Gate commands:
-- `make check`
-- `hearth bench --report`
-- `python -m hearth.bench.runner --m6 --verify`
+## Plan: v0.1.0 tag is cut on the offline gate (D-14, D-15)
+Git tag `v0.1.0` follows a green `make check` on GitHub. PyPI upload still needs trusted publishing connected for `jishmisc28/hearth`. Live contract nights start when `GEMINI_API_KEY` is in repository secrets. Spend remains $0.00 until then.
 
 ## Log
+
+## 2026-10-23 · M7 hardening & v0.1: IN PROGRESS
+Gate commands and output tails:
+- `make check` (local, after the default-mode change): `57 passed, 3 deselected`
+- Gemini independent evaluation, 2026-10-23T02:07Z to 02:14Z: Group A 10/10 pass, Group B 1/7 pass. Verdict LIBRARY-OK. Recorded in `hearth-v0.1-proof.html` and `hearth-v0.1-proof.typescript`.
+Numbers: 57 passed · simulator report still 42.0% and labeled SIMULATOR · API spend this week $0.00
+What changed (user-visible first):
+- `hearth.wrap(client)` now defaults to `safe`, matching the handbook. `observe` and `optimize` are unchanged when named.
+- GitHub Actions runs `make check` on Python 3.10, 3.11, and 3.12.
+- A nightly contract workflow is armed. It fails closed until `GEMINI_API_KEY` exists.
+- A `v*` tag publishes `hearth-ai` once PyPI trusts this repository.
+- Package version is `0.1.0`.
+Learned (for Abhranshu):
+- `hearth-v0.1-proof.typescript`: replaying a trace recorded with `record=False` prices every mode at 1.00×, because the prompt was correctly left out of the file. The replay that kept the request showed `optimize` at 0.44× against 1.00× for `observe` and `safe`. That figure is still the simulator.
+- Human install trials and a live provider bill are different blocks. Agents can replace the first. They cannot replace the second without a key.
+GTM-ready: no new live claim. C-01 through C-11 stay simulator-backed.
+Blocked on Abhranshu: add repository secret `GEMINI_API_KEY`, and on PyPI turn on trusted publishing for `jishmisc28/hearth` (environment name `pypi`). Nothing else.
 
 ## 2026-10-19 · M7 hardening & v0.1 release readiness: PENDING-HUMAN
 Gate commands and output tails:

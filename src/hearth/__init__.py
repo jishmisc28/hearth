@@ -11,7 +11,7 @@ from hearth import memory, policies, tools
 from hearth.exceptions import HearthError, HearthPrefixBreak
 from hearth.trace import TraceRecorder, get_trace_recorder
 
-__version__ = "0.1.0b1"
+__version__ = "0.1.0"
 __all__ = [
     "wrap",
     "session",
