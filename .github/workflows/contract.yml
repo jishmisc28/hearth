@@ -1,0 +1,35 @@
+name: contract
+
+# Live Gemini calls. Each green run spends a small part of the $25 budget.
+# The release gate needs five successful nights after GEMINI_API_KEY is set
+# in the repository secrets. A skipped test is not a success.
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          uv venv
+          uv pip install --python .venv/bin/python -e ".[dev,gemini,openai]"
+      - name: Require the Gemini key
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY is not set. Add it under repository secrets."
+            exit 1
+          fi
+      - name: make contract
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: make contract
