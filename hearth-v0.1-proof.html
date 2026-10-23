@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hearth v0.1 Independent Evaluation Proof — LIBRARY-OK</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-alt: #1c2128;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --pass: #2ea043;
+      --pass-bg: rgba(46, 160, 67, 0.15);
+      --fail: #f85149;
+      --fail-bg: rgba(248, 81, 73, 0.15);
+      --warn: #d29922;
+      --warn-bg: rgba(210, 153, 34, 0.15);
+      --accent: #58a6ff;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 20px 64px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .verdict-banner {
+      border: 2px solid var(--warn);
+      background: linear-gradient(135deg, rgba(210, 153, 34, 0.16), rgba(22, 27, 34, 0.95));
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .verdict-word {
+      font-family: var(--mono);
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #f0b72f;
+      margin: 0;
+    }
+    .verdict-sub {
+      color: var(--text);
+      font-size: 0.98rem;
+      max-width: 680px;
+    }
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .meta-pill {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h2 {
+      font-size: 1.35rem;
+      margin: 36px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font-size: 1.08rem;
+      margin: 0 0 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.92rem;
+      margin-bottom: 24px;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      background: var(--panel-alt);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-pass {
+      color: #7ee787;
+      background: var(--pass-bg);
+      border: 1px solid var(--pass);
+    }
+    .badge-fail {
+      color: #ffa198;
+      background: var(--fail-bg);
+      border: 1px solid var(--fail);
+    }
+    .badge-sim {
+      color: #f0b72f;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn);
+    }
+    .check-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+    .check-header {
+      background: var(--panel-alt);
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .check-title {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .check-meta {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      gap: 14px;
+    }
+    .check-body {
+      padding: 16px 18px;
+    }
+    .cmd-box {
+      background: #090d11;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: #79c0ff;
+      overflow-x: auto;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .term-box {
+      background: #050709;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: #d0d7de;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.45;
+      margin: 0;
+    }
+    .trunc-note {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: #f0b72f;
+      margin-top: 8px;
+    }
+    .byte-diff {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 14px 0;
+    }
+    @media (max-width: 820px) {
+      .byte-diff { grid-template-columns: 1fr; }
+    }
+    .byte-col {
+      background: #090d11;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+    .byte-col h4 {
+      margin: 0 0 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .byte-stable {
+      background: rgba(46, 160, 67, 0.14);
+      border-left: 3px solid var(--pass);
+      padding: 4px 8px;
+      margin: 4px 0;
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .byte-moved {
+      background: rgba(210, 153, 34, 0.2);
+      border-left: 3px solid var(--warn);
+      padding: 4px 8px;
+      margin: 4px 0;
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .fact-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .fact-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+    code {
+      font-family: var(--mono);
+      font-size: 0.86em;
+      background: rgba(110, 118, 129, 0.2);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- VERDICT BANNER -->
+    <div class="verdict-banner">
+      <div>
+        <div class="verdict-word">LIBRARY-OK</div>
+        <div class="verdict-sub">
+          <strong>Group A (Offline Library Claims, Checks 1–10): 10 / 10 PASS.</strong><br />
+          <strong>Group B (v0.1.0 Release Gate, Checks 11–17): 1 / 7 PASS, 6 / 7 FAIL.</strong><br />
+          Per the verdict rule (<code>LIBRARY-OK</code> if all Group A items pass and any Group B item fails), the library satisfies its offline behavioral, invariant, privacy, CLI, and simulator claims, while the v0.1.0 release gate items remain incomplete.
+        </div>
+        <div class="meta-bar">
+          <span class="meta-pill">Evaluated UTC: 2026-10-23T02:05:59Z – 2026-10-23T02:14:35Z</span>
+          <span class="meta-pill">HEAD: c97122d704414a00f118f93cfb5242aa5073d9f1</span>
+          <span class="meta-pill">Live API Spend During Eval: $0.00 (0 network calls)</span>
+          <span class="meta-pill">Terminal Recording: <a href="./hearth-v0.1-proof.typescript">hearth-v0.1-proof.typescript</a> (via <code>/usr/bin/script</code>; <code>asciinema</code> not installed; no video/screenshot fabricated)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY CHECKLIST -->
+    <h2>Summary Checklist</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 70px;">Check</th>
+          <th style="width: 90px;">Group</th>
+          <th>Requirement</th>
+          <th style="width: 110px;">Exit Code</th>
+          <th style="width: 100px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>#1</strong></td>
+          <td>Group A</td>
+          <td><code>make check</code> exits 0 (<code>ruff</code>, <code>ruff format</code>, <code>mypy --strict src/hearth</code>, <code>pytest -m "not contract"</code>). Passed: 56, Failed: 0, Deselected: 3.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#2</strong></td>
+          <td>Group A</td>
+          <td>All named invariant tests exist and pass (15 listed + <code>test_no_content_by_default</code> = 16 in <code>tests/test_invariants.py</code>) + <code>tests/test_named_tests_exist.py</code> asserts list exists (17/17 passed).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#3</strong></td>
+          <td>Group A</td>
+          <td>Local offline demo with <code>FakeProvider</code> in <code>observe</code> mode: outgoing request is byte-identical to input (293 bytes in == 293 bytes out).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#4</strong></td>
+          <td>Group A</td>
+          <td>Local offline demo in <code>safe</code> mode: shuffled tool set in, first-seen order out, tool text unchanged, trace records <code>tool_order_restored</code>.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#5</strong></td>
+          <td>Group A</td>
+          <td>Local offline demo in <code>optimize</code> mode: volatile ISO timestamp line in system prompt moved to latest user message, trace records <code>volatile_relocated</code>.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#6</strong></td>
+          <td>Group A</td>
+          <td><code>read + write + uncached == total_input</code> verified for Anthropic-shaped (3500 + 1000 + 500 = 5000) and OpenAI-shaped (2800 + 500 + 700 = 4000) usage objects.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#7</strong></td>
+          <td>Group A</td>
+          <td><code>FakeProvider</code> session with <code>record=False</code>: SQLite ledger row has token counts and cost (<code>0.00368700</code>, <code>0.00373500</code>) and zero prompt text; JSONL trace has no <code>"body"</code> key and zero prompt text.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#8</strong></td>
+          <td>Group A</td>
+          <td><code>hearth report --session &lt;id&gt; --ledger &lt;path&gt;</code> and <code>hearth diagnose &lt;trace.jsonl&gt;</code> both exit 0 and name real cause codes from <code>src/hearth/data/breaks.yaml</code> (<code>tools_reordered</code>, <code>below_minimum</code>).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#9</strong></td>
+          <td>Group A</td>
+          <td><code>hearth replay &lt;trace.jsonl&gt; --provider gemini --model gemini-2.5-flash</code> exits 0 and prints a cost for <code>observe</code>, <code>safe</code>, and <code>optimize</code>.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#10</strong></td>
+          <td>Group A</td>
+          <td><code>python -m hearth.bench.runner --m0 --verify</code>, <code>--m4 --verify</code>, and <code>--m6 --verify</code> exit 0. In <code>docs/REPORT.md</code>, all 4 framework rows per provider have identical read share (<code>0.0%</code> / <code>48.9%</code>) and cost (<code>$0.0156</code> / <code>$0.0093</code> on Gemini; <code>$0.3201</code> / <code>$0.1854</code> on OpenAI) &rarr; 42.0% figure labeled <span class="badge badge-sim">SIMULATOR</span>.</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#11</strong></td>
+          <td>Group B</td>
+          <td>Version in <code>pyproject.toml</code> and <code>src/hearth/__init__.py</code> is <code>0.1.0</code> (actual: <code>0.1.0b1</code>); <code>git tag -l</code> has <code>v0.1.0</code>/<code>0.1.0</code> (actual: only <code>0.1.0a1</code>); <code>git status</code> clean (actual: untracked <code>hearth-synthesis.html</code>); <code>HEAD == origin/main</code> (true).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+        </tr>
+        <tr>
+          <td><strong>#12</strong></td>
+          <td>Group B</td>
+          <td>A GitHub Actions workflow exists and runs <code>make check</code> (actual: <code>.github/workflows</code> does not exist).</td>
+          <td><code>1</code></td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+        </tr>
+        <tr>
+          <td><strong>#13</strong></td>
+          <td>Group B</td>
+          <td><code>docs/BENCH.md</code> has at least one spend-log row with a non-zero token total from a live provider, dated, within $25 budget (actual: Spend Log table is empty, Total Spent $0.00).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+        </tr>
+        <tr>
+          <td><strong>#14</strong></td>
+          <td>Group B</td>
+          <td>Contract tests have evidence of five successful nightly runs (actual: not run, would spend money; zero nightly run evidence in repo or CI).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+        </tr>
+        <tr>
+          <td><strong>#15</strong></td>
+          <td>Group B</td>
+          <td><code>gtm/TRIALS.md</code> exists and contains three outsider install notes (actual: <code>gtm/TRIALS.md</code> does not exist).</td>
+          <td><code>1</code></td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+        </tr>
+        <tr>
+          <td><strong>#16</strong></td>
+          <td>Group B</td>
+          <td><code>src/hearth/data/providers.toml</code> <code>source_date</code> values are within 14 days of today (all three are <code>2026-10-19</code>, 4 days prior to <code>2026-10-23</code>).</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-pass">PASS</span></td>
+        </tr>
+        <tr>
+          <td><strong>#17</strong></td>
+          <td>Group B</td>
+          <td>PyPI trusted publishing workflow configured in repo + <code>https://pypi.org/pypi/hearth-ai/json</code> check (actual: no workflow exists; PyPI returns HTTP 404 "not published").</td>
+          <td><code>0</code></td>
+          <td><span class="badge badge-fail">FAIL</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- GROUP A DETAILS -->
+    <h2>Group A — Offline Library Verification (Checks 1–10)</h2>
+
+    <!-- CHECK 1 -->
+    <div class="check-card" id="check-1">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 1 · <code>make check</code> (ruff, ruff format, mypy --strict, pytest -m "not contract")</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:07:05Z</span>
+          <span>Exit Code: 0</span>
+          <span>Passed: 56 · Failed: 0 · Deselected: 3</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ make check</div>
+        <pre class="term-box">uv run ruff check src tests bench
+All checks passed!
+uv run ruff format --check src tests bench
+72 files already formatted
+uv run mypy --strict src/hearth
+Success: no issues found in 39 source files
+uv run pytest -m "not contract" tests/
+============================= test session starts ==============================
+platform darwin -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/jishmisc_pro/Documents/hearth
+configfile: pyproject.toml
+plugins: hypothesis-6.151.13
+collected 59 items / 3 deselected / 56 selected
+
+tests/test_breaks_doc.py ....                                            [  7%]
+tests/test_cli.py ....                                                   [ 14%]
+tests/test_compaction.py ....                                            [ 21%]
+tests/test_FakeProvider.py ....                                          [ 28%]
+tests/test_guard.py ....                                                 [ 35%]
+tests/test_integrations.py ....                                          [ 42%]
+tests/test_invariants.py ................                                [ 71%]
+tests/test_memory.py .....                                               [ 80%]
+tests/test_named_tests_exist.py .                                        [ 82%]
+tests/test_nfr_latency.py .                                              [ 83%]
+tests/test_offload.py ...                                                [ 89%]
+tests/test_planner_ttl.py ...                                            [ 94%]
+tests/test_route.py ...                                                  [100%]
+
+======================= 56 passed, 3 deselected in 0.97s =======================</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 2 -->
+    <div class="check-card" id="check-2">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 2 · Named Invariant Tests &amp; Meta-Test (<code>tests/test_named_tests_exist.py</code>)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:07:08Z</span>
+          <span>Exit Code: 0</span>
+          <span>Passed: 17 · Failed: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ .venv/bin/pytest -v tests/test_invariants.py tests/test_named_tests_exist.py</div>
+        <pre class="term-box">============================= test session starts ==============================
+platform darwin -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0 -- /Users/jishmisc_pro/Documents/hearth/.venv/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/jishmisc_pro/Documents/hearth
+configfile: pyproject.toml
+plugins: hypothesis-6.151.13
+collecting ... collected 17 items
+
+tests/test_invariants.py::test_observe_passthrough_bytes PASSED          [  5%]
+tests/test_invariants.py::test_no_content_by_default PASSED              [ 11%]
+tests/test_invariants.py::test_safe_no_content_change PASSED             [ 17%]
+tests/test_invariants.py::test_fingerprint_determinism PASSED            [ 23%]
+tests/test_invariants.py::test_append_only PASSED                        [ 29%]
+tests/test_invariants.py::test_changes_reported PASSED                   [ 35%]
+tests/test_invariants.py::test_usage_reconciles_anthropic PASSED         [ 41%]
+tests/test_invariants.py::test_usage_reconciles_openai PASSED            [ 47%]
+tests/test_invariants.py::test_usage_reconciles_gemini PASSED            [ 52%]
+tests/test_invariants.py::test_fail_open PASSED                          [ 58%]
+tests/test_invariants.py::test_no_extra_network PASSED                   [ 64%]
+tests/test_invariants.py::test_break_attribution PASSED                  [ 70%]
+tests/test_invariants.py::test_planner_limits PASSED                     [ 76%]
+tests/test_invariants.py::test_memory_supersede PASSED                   [ 82%]
+tests/test_invariants.py::test_memory_no_session_mutation PASSED         [ 88%]
+tests/test_invariants.py::test_cost_decimal PASSED                       [ 94%]
+tests/test_named_tests_exist.py::test_all_named_invariant_tests_exist PASSED [100%]
+
+============================== 17 passed in 0.69s ==============================</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 3 -->
+    <div class="check-card" id="check-3">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 3 · Offline Demo in <code>observe</code> Mode (Byte-Identical Outgoing Request)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:08:56Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ .venv/bin/python -c '
+import json, hearth
+from hearth.testing import FakeProvider
+from hearth.trace import TraceRecorder
+
+fake = FakeProvider(provider="anthropic", model="claude-3-5-sonnet-20241022")
+orig_create = fake.messages.create
+captured = {}
+def spy_create(**kw):
+    captured["out"] = kw
+    return orig_create(**kw)
+fake.messages.create = spy_create
+
+client = hearth.wrap(fake, mode="observe", recorder=TraceRecorder("/tmp/hearth_eval/traces_c3"))
+payload = {
+    "model": "claude-3-5-sonnet-20241022",
+    "system": "You are a precise assistant.\nTimestamp: 2026-10-23T02:00:00Z",
+    "tools": [{"name": "z_tool", "description": "Z"}, {"name": "a_tool", "description": "A"}],
+    "messages": [{"role": "user", "content": "Hello world"}],
+    "session_id": "demo-observe",
+}
+in_bytes = json.dumps(payload, sort_keys=True).encode("utf-8")
+client.messages.create(**payload)
+out_bytes = json.dumps(captured["out"], sort_keys=True).encode("utf-8")
+print("IN_BYTES :", in_bytes.decode())
+print("OUT_BYTES:", out_bytes.decode())
+print("BYTE_IDENTICAL:", in_bytes == out_bytes, "LEN:", len(in_bytes), "vs", len(out_bytes))
+assert in_bytes == out_bytes
+'</div>
+        <pre class="term-box">IN_BYTES : {"messages": [{"content": "Hello world", "role": "user"}], "model": "claude-3-5-sonnet-20241022", "session_id": "demo-observe", "system": "You are a precise assistant.\nTimestamp: 2026-10-23T02:00:00Z", "tools": [{"description": "Z", "name": "z_tool"}, {"description": "A", "name": "a_tool"}]}
+OUT_BYTES: {"messages": [{"content": "Hello world", "role": "user"}], "model": "claude-3-5-sonnet-20241022", "session_id": "demo-observe", "system": "You are a precise assistant.\nTimestamp: 2026-10-23T02:00:00Z", "tools": [{"description": "Z", "name": "z_tool"}, {"description": "A", "name": "a_tool"}]}
+BYTE_IDENTICAL: True LEN: 293 vs 293</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 4 -->
+    <div class="check-card" id="check-4">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 4 · Offline Demo in <code>safe</code> Mode (Tool Order Restored, Text Unchanged, Trace Recorded)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:09:18Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ .venv/bin/python -c '
+import json, hearth
+from hearth.testing import FakeProvider
+from hearth.trace import TraceRecorder
+
+recorder = TraceRecorder("/tmp/hearth_eval/traces_c4")
+fake = FakeProvider(provider="anthropic", model="claude-3-5-sonnet-20241022")
+orig_create = fake.messages.create
+sent_payloads = []
+def spy_create(**kw):
+    sent_payloads.append(kw)
+    return orig_create(**kw)
+fake.messages.create = spy_create
+
+client = hearth.wrap(fake, mode="safe", recorder=recorder)
+t_read = {"name": "read_file", "description": "Read a file from disk"}
+t_grep = {"name": "grep_search", "description": "Search regex in repo"}
+t_test = {"name": "run_tests", "description": "Execute pytest suite"}
+
+client.messages.create(model="claude-3-5-sonnet-20241022", system="Static system prompt.", tools=[t_read, t_grep, t_test], messages=[{"role": "user", "content": "Turn 1"}], session_id="demo-safe")
+shuffled_in = [t_test, t_read, t_grep]
+client.messages.create(model="claude-3-5-sonnet-20241022", system="Static system prompt.", tools=shuffled_in, messages=[{"role": "user", "content": "Turn 1"}, {"role": "assistant", "content": "Ack 1"}, {"role": "user", "content": "Turn 2"}], session_id="demo-safe")
+
+sent_tools_2 = sent_payloads[1]["tools"]
+trace_entries = recorder.read_session("demo-safe")
+print("CALL 2 TOOLS IN (shuffled):", json.dumps(shuffled_in))
+print("CALL 2 TOOLS OUT (restored):", json.dumps(sent_tools_2))
+print("CALL 2 TRACE CHANGES:", json.dumps(trace_entries[1]["changes"]))
+print("CALL 2 TRACE BREAKS :", json.dumps(trace_entries[1]["breaks"]))
+'</div>
+        <pre class="term-box">CALL 2 TOOLS IN (shuffled): [{"name": "run_tests", "description": "Execute pytest suite"}, {"name": "read_file", "description": "Read a file from disk"}, {"name": "grep_search", "description": "Search regex in repo"}]
+CALL 2 TOOLS OUT (restored): [{"name": "read_file", "description": "Read a file from disk"}, {"name": "grep_search", "description": "Search regex in repo"}, {"name": "run_tests", "description": "Execute pytest suite"}]
+CALL 2 TRACE CHANGES: [{"kind": "tool_order_restored", "first_seen_order": ["read_file", "grep_search", "run_tests"], "reordered_order": ["run_tests", "read_file", "grep_search"], "details": "Restored first-seen tool order to protect prefix cache"}]
+CALL 2 TRACE BREAKS : [{"cause": "tools_reordered", "user_caused": true, "level": "tools", "details": "Restored first-seen tool order in safe mode"}, {"cause": "below_minimum", "user_caused": false, "level": "system", "details": "Context tokens (83) below provider minimum (2048)"}]</pre>
+
+        <div class="byte-diff">
+          <div class="byte-col">
+            <h4>Observed Call 2 Input Bytes (Shuffled Tools)</h4>
+            <span class="byte-moved">[{"name": "run_tests", "description": "Execute pytest suite"},
+ {"name": "read_file", "description": "Read a file from disk"},
+ {"name": "grep_search", "description": "Search regex in repo"}]</span>
+            <span class="byte-stable">system: "Static system prompt."
+messages: [{"role": "user", "content": "Turn 1"}, {"role": "assistant", "content": "Ack 1"}, {"role": "user", "content": "Turn 2"}]</span>
+          </div>
+          <div class="byte-col">
+            <h4>Observed Call 2 Outgoing Bytes (First-Seen Order Restored)</h4>
+            <span class="byte-stable">[{"name": "read_file", "description": "Read a file from disk"},
+ {"name": "grep_search", "description": "Search regex in repo"},
+ {"name": "run_tests", "description": "Execute pytest suite"}]</span>
+            <span class="byte-stable">system: "Static system prompt."
+messages: [{"role": "user", "content": "Turn 1"}, {"role": "assistant", "content": "Ack 1"}, {"role": "user", "content": "Turn 2"}]</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECK 5 -->
+    <div class="check-card" id="check-5">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 5 · Offline Demo in <code>optimize</code> Mode (Volatile ISO Timestamp Relocated to User Tail)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:09:18Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ .venv/bin/python -c '
+import json, hearth
+from hearth.testing import FakeProvider
+from hearth.trace import TraceRecorder
+
+recorder = TraceRecorder("/tmp/hearth_eval/traces_c5")
+fake = FakeProvider(provider="anthropic", model="claude-3-5-sonnet-20241022")
+orig_create = fake.messages.create
+sent = {}
+def spy_create(**kw):
+    sent["kw"] = kw
+    return orig_create(**kw)
+fake.messages.create = spy_create
+
+client = hearth.wrap(fake, mode="optimize", recorder=recorder)
+in_system = "You are a senior Python engineer.\nCurrent time: 2026-10-23T02:09:00Z\nFollow PEP 8 strictly."
+in_messages = [{"role": "user", "content": "Refactor src/hearth/layout.py"}]
+
+client.messages.create(model="claude-3-5-sonnet-20241022", system=in_system, messages=in_messages, session_id="demo-optimize")
+out_system = sent["kw"]["system"]
+out_messages = sent["kw"]["messages"]
+trace_entries = recorder.read_session("demo-optimize")
+print("BEFORE (input system)  :", repr(in_system))
+print("BEFORE (input messages):", json.dumps(in_messages))
+print("AFTER  (sent system)   :", repr(out_system))
+print("AFTER  (sent messages) :", json.dumps(out_messages))
+print("TRACE CHANGES          :", json.dumps(trace_entries[0]["changes"]))
+'</div>
+        <pre class="term-box">BEFORE (input system)  : 'You are a senior Python engineer.\nCurrent time: 2026-10-23T02:09:00Z\nFollow PEP 8 strictly.'
+BEFORE (input messages): [{"role": "user", "content": "Refactor src/hearth/layout.py"}]
+AFTER  (sent system)   : 'You are a senior Python engineer.\nFollow PEP 8 strictly.'
+AFTER  (sent messages) : [{"role": "user", "content": "Refactor src/hearth/layout.py\n\n[Runtime Context:\nCurrent time: 2026-10-23T02:09:00Z]"}]
+TRACE CHANGES          : [{"kind": "volatile_relocated", "source": "system", "target_message_index": 0, "snippets": ["Current time: 2026-10-23T02:09:00Z"]}]</pre>
+
+        <div class="byte-diff">
+          <div class="byte-col">
+            <h4>Observed Input Prompt Bytes (Before <code>optimize</code>)</h4>
+            <span class="byte-stable">system[0..33]: "You are a senior Python engineer.\n"</span>
+            <span class="byte-moved">system[34..69]: "Current time: 2026-10-23T02:09:00Z\n"  &larr; volatile ISO timestamp in prefix</span>
+            <span class="byte-stable">system[70..91]: "Follow PEP 8 strictly."</span>
+            <span class="byte-stable">messages[0].content: "Refactor src/hearth/layout.py"</span>
+          </div>
+          <div class="byte-col">
+            <h4>Observed Outgoing Prompt Bytes (After <code>optimize</code>)</h4>
+            <span class="byte-stable">system[0..55]: "You are a senior Python engineer.\nFollow PEP 8 strictly."  &larr; stable prefix preserved</span>
+            <span class="byte-stable">messages[0].content[0..28]: "Refactor src/hearth/layout.py"</span>
+            <span class="byte-moved">messages[0].content[29..84]: "\n\n[Runtime Context:\nCurrent time: 2026-10-23T02:09:00Z]"  &larr; relocated to latest user message</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECK 6 -->
+    <div class="check-card" id="check-6">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 6 · Usage Reconciliation (<code>read + write + uncached == total_input</code> for Anthropic &amp; OpenAI)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:11:34Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ .venv/bin/python -c '
+import json
+from hearth.adapters.anthropic import parse_anthropic_usage
+from hearth.adapters.openai import parse_openai_usage
+
+anth_raw = {"input_tokens": 5000, "cache_read_input_tokens": 3500, "cache_creation_input_tokens": 1000, "output_tokens": 200}
+oai_raw = {"prompt_tokens": 4000, "prompt_tokens_details": {"cached_tokens": 2800}, "cache_write_tokens": 500, "completion_tokens": 150}
+
+anth_u = parse_anthropic_usage(anth_raw)
+oai_u = parse_openai_usage(oai_raw)
+
+print("ANTHROPIC FIXTURE:", json.dumps(anth_raw))
+print(f"ANTHROPIC RECON  : read({anth_u.read}) + write({anth_u.write}) + uncached({anth_u.uncached}) = {anth_u.read + anth_u.write + anth_u.uncached} == total_input({anth_u.total_input})")
+assert anth_u.read + anth_u.write + anth_u.uncached == anth_u.total_input == anth_raw["input_tokens"]
+
+print("OPENAI FIXTURE   :", json.dumps(oai_raw))
+print(f"OPENAI RECON     : read({oai_u.read}) + write({oai_u.write}) + uncached({oai_u.uncached}) = {oai_u.read + oai_u.write + oai_u.uncached} == total_input({oai_u.total_input})")
+assert oai_u.read + oai_u.write + oai_u.uncached == oai_u.total_input == oai_raw["prompt_tokens"]
+'</div>
+        <pre class="term-box">ANTHROPIC FIXTURE: {"input_tokens": 5000, "cache_read_input_tokens": 3500, "cache_creation_input_tokens": 1000, "output_tokens": 200}
+ANTHROPIC RECON  : read(3500) + write(1000) + uncached(500) = 5000 == total_input(5000)
+OPENAI FIXTURE   : {"prompt_tokens": 4000, "prompt_tokens_details": {"cached_tokens": 2800}, "cache_write_tokens": 500, "completion_tokens": 150}
+OPENAI RECON     : read(2800) + write(500) + uncached(700) = 4000 == total_input(4000)</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 7 -->
+    <div class="check-card" id="check-7">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 7 · Privacy Invariant (<code>record=False</code>: Token Counts &amp; Cost in SQLite, No Prompt Text or Body in SQLite/JSONL)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:11:59Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ HEARTH_HOME=/tmp/hearth_eval/check7 .venv/bin/python -c '
+import json, sqlite3, os, shutil
+from pathlib import Path
+import hearth
+from hearth.testing import FakeProvider
+from hearth.trace import TraceRecorder
+
+base = Path("/tmp/hearth_eval/check7")
+if base.exists(): shutil.rmtree(base)
+(base / "traces").mkdir(parents=True, exist_ok=True)
+os.environ["HEARTH_HOME"] = str(base)
+
+ledger_path = base / "ledger.sqlite"
+trace_dir = base / "traces"
+recorder = TraceRecorder(trace_dir)
+fake = FakeProvider(provider="anthropic", model="claude-3-5-sonnet-20241022")
+client = hearth.wrap(fake, mode="safe", record=False, recorder=recorder)
+
+secret_prompt = "TOP_SECRET_DO_NOT_RECORD_994812_SYSTEM_PROMPT " + ("padding token " * 250)
+tools_t1 = [{"name": "alpha", "description": "Alpha tool"}, {"name": "beta", "description": "Beta tool"}]
+tools_t2 = [{"name": "beta", "description": "Beta tool"}, {"name": "alpha", "description": "Alpha tool"}]
+
+client.messages.create(model="claude-3-5-sonnet-20241022", system=secret_prompt + "\nTimestamp: 2026-10-23T02:00:00Z", tools=tools_t1, messages=[{"role": "user", "content": "CONFIDENTIAL_USER_MSG_TURN_1"}], session_id="sess-check7")
+client.messages.create(model="claude-3-5-sonnet-20241022", system=secret_prompt + "\nTimestamp: 2026-10-23T02:01:00Z", tools=tools_t2, messages=[{"role": "user", "content": "CONFIDENTIAL_USER_MSG_TURN_1"}, {"role": "assistant", "content": "ack"}, {"role": "user", "content": "CONFIDENTIAL_USER_MSG_TURN_2"}], session_id="sess-check7")
+
+conn = sqlite3.connect(ledger_path)
+conn.row_factory = sqlite3.Row
+rows = [dict(r) for r in conn.execute("SELECT * FROM calls WHERE session_id = ?", ("sess-check7",)).fetchall()]
+db_dump = "\n".join(conn.iterdump())
+conn.close()
+
+trace_file = trace_dir / "sess-check7.jsonl"
+trace_text = trace_file.read_text()
+trace_objs = [json.loads(line) for line in trace_text.strip().splitlines()]
+
+print("SQLITE LEDGER ROWS:", json.dumps(rows))
+print("PROMPT TEXT IN SQLITE DUMP:", ("TOP_SECRET_DO_NOT_RECORD" in db_dump or "CONFIDENTIAL_USER_MSG" in db_dump))
+print("JSONL TRACE KEYS PER CALL :", [list(o.keys()) for o in trace_objs])
+print("BODY KEY PRESENT IN TRACE :", any("body" in o for o in trace_objs))
+print("PROMPT TEXT IN TRACE FILE :", ("TOP_SECRET_DO_NOT_RECORD" in trace_text or "CONFIDENTIAL_USER_MSG" in trace_text))
+print("TRACE LINE 2 JSON         :", json.dumps(trace_objs[1]))
+'</div>
+        <pre class="term-box">SQLITE LEDGER ROWS: [{"id": 1, "session_id": "sess-check7", "call_index": 1, "ts_start": 1792721519.956407, "ts_end": 1792721519.9564512, "provider": "anthropic", "model": "claude-3-5-sonnet-20241022", "mode": "safe", "read_tokens": 0, "write_tokens": 0, "uncached_tokens": 979, "output_tokens": 50, "cost_usd": "0.00368700", "breaks_count": 1}, {"id": 2, "session_id": "sess-check7", "call_index": 2, "ts_start": 1792721519.9583628, "ts_end": 1792721519.9583921, "provider": "anthropic", "model": "claude-3-5-sonnet-20241022", "mode": "safe", "read_tokens": 0, "write_tokens": 0, "uncached_tokens": 995, "output_tokens": 50, "cost_usd": "0.00373500", "breaks_count": 2}]
+PROMPT TEXT IN SQLITE DUMP: False
+JSONL TRACE KEYS PER CALL : [['v', 'session', 'call', 'ts_start', 'ts_first_token', 'ts_end', 'provider', 'api', 'model', 'mode', 'params', 'fingerprints', 'usage', 'breaks', 'changes'], ['v', 'session', 'call', 'ts_start', 'ts_first_token', 'ts_end', 'provider', 'api', 'model', 'mode', 'params', 'fingerprints', 'usage', 'breaks', 'changes']]
+BODY KEY PRESENT IN TRACE : False
+PROMPT TEXT IN TRACE FILE : False
+TRACE LINE 2 JSON         : {"v": 1, "session": "sess-check7", "call": 2, "ts_start": 1792721519.9583628, "ts_first_token": null, "ts_end": 1792721519.9583921, "provider": "anthropic", "api": "messages", "model": "claude-3-5-sonnet-20241022", "mode": "safe", "params": {}, "fingerprints": {"tools": [], "system": [], "messages": []}, "usage": {"raw": {"cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "input_tokens": 995, "output_tokens": 50}, "read": 0, "write": 0, "uncached": 995, "output": 50, "cost_usd": "0.00373500"}, "breaks": [{"cause": "tools_reordered", "user_caused": true, "level": "tools", "details": "Restored first-seen tool order in safe mode"}, {"cause": "below_minimum", "user_caused": false, "level": "system", "details": "Context tokens (992) below provider minimum (2048)"}], "changes": [{"kind": "tool_order_restored", "first_seen_order": ["alpha", "beta"], "reordered_order": ["beta", "alpha"], "details": "Restored first-seen tool order to protect prefix cache"}]}</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 8 -->
+    <div class="check-card" id="check-8">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 8 · CLI <code>hearth report</code> &amp; <code>hearth diagnose</code> on Check 7 Artifacts</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:12:01Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ HEARTH_HOME=/tmp/hearth_eval/check7 .venv/bin/hearth report --session sess-check7 --ledger /tmp/hearth_eval/check7/ledger.sqlite &amp;&amp; .venv/bin/hearth diagnose /tmp/hearth_eval/check7/traces/sess-check7.jsonl</div>
+        <pre class="term-box">Session Report: sess-check7
+calls 2 · input 1,974 tok · read 0 (0.0%) · written 0 · uncached 1,974 · output 100
+total cost: $0.00742200 USD
+
+transformations (1):
+  call 2    tool_order_restored    Restored first-seen tool order to protect prefix cache
+
+prefix breaks (3):
+  call 1    below_minimum        Context tokens (967) below provider minimum (2048)
+  call 2    tools_reordered      Restored first-seen tool order in safe mode
+  call 2    below_minimum        Context tokens (992) below provider minimum (2048)
+
+Diagnosing trace: sess-check7.jsonl (session 'sess-check7') · read share 0.0%
+  call 1: level system · cause below_minimum
+    detail: Context tokens (967) below provider minimum (2048)
+    note: prefix below provider caching threshold
+  call 2: level tools · cause tools_reordered
+    detail: Restored first-seen tool order in safe mode
+    fix: mode='safe' will restore first-seen tool order automatically
+  call 2: level system · cause below_minimum
+    detail: Context tokens (992) below provider minimum (2048)
+    note: prefix below provider caching threshold</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 9 -->
+    <div class="check-card" id="check-9">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 9 · CLI <code>hearth replay &lt;trace.jsonl&gt; --provider gemini --model gemini-2.5-flash</code></span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:13:21Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ .venv/bin/hearth replay /tmp/hearth_eval/check7/traces/sess-check7.jsonl --provider gemini --model gemini-2.5-flash &amp;&amp; .venv/bin/hearth replay /tmp/hearth_eval/check9_recorded.jsonl --provider gemini --model gemini-2.5-flash</div>
+        <pre class="term-box">--- Replay on Check 7 trace (record=False, no request body) ---
+mode      read     written    uncached   input cost   user-caused breaks
+observe   0%       0%         0%         1.00×        0
+safe      0%       0%         0%         1.00×        0
+optimize  0%       0%         0%         1.00×        0
+--- Replay on recorded trace (with request.kwargs) ---
+mode      read     written    uncached   input cost   user-caused breaks
+observe   0%       100%       0%         1.00×        0
+safe      0%       100%       0%         1.00×        0
+optimize  66%      34%        0%         0.44×        0</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 10 -->
+    <div class="check-card" id="check-10">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 10 · Benchmark Verifiers (<code>--m0</code>, <code>--m4</code>, <code>--m6</code>) &amp; <code>docs/REPORT.md</code> Inspection (<span class="badge badge-sim">SIMULATOR</span>)</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:12:04Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <p style="margin-top:0;">
+          <strong>Inspection of <code>docs/REPORT.md</code> (lines 22–31):</strong> Every framework row (<code>Custom Loop</code>, <code>Pydantic Ai</code>, <code>Openai Agents Sdk</code>, <code>Langgraph</code>) has the <strong>exact same read share</strong> (<code>0.0%</code> Stock, <code>48.9%</code> Optimize) and the <strong>exact same cost</strong> (<code>$0.0156</code> Stock / <code>$0.0093</code> Optimize on <code>gemini-2.5-flash</code>; <code>$0.3201</code> Stock / <code>$0.1854</code> Optimize on <code>gpt-4o</code>). Per evaluation rules, the <strong>42.0%</strong> overall cost reduction figure is labeled <strong><span class="badge badge-sim">SIMULATOR</span></strong>, not a provider bill.
+        </p>
+        <div class="cmd-box">$ .venv/bin/python -m hearth.bench.runner --m0 --verify &amp;&amp; .venv/bin/python -m hearth.bench.runner --m4 --verify &amp;&amp; .venv/bin/python -m hearth.bench.runner --m6 --verify</div>
+        <pre class="term-box">Running M0 Kill Test: 20 tasks × 2 templates × 4 arms × 3 runs...
+
+{
+  "typical": {
+    "A": { "runs": 60, "read_share_pct": 0.0, "avg_cost_usd": 0.0007416, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0 },
+    "B": { "runs": 60, "read_share_pct": 49.5, "avg_cost_usd": 0.0004188, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0, "cost_reduction_vs_a_pct": 43.5 },
+    "C": { "runs": 60, "read_share_pct": 0.0, "avg_cost_usd": 0.0007416, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0, "cost_reduction_vs_a_pct": 0.0 },
+    "D": { "runs": 60, "read_share_pct": 49.4, "avg_cost_usd": 0.000419, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0, "cost_reduction_vs_a_pct": 43.5 }
+  },
+  "minimal": {
+    "A": { "runs": 60, "read_share_pct": 49.5, "avg_cost_usd": 0.0004149, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0 },
+    "B": { "runs": 60, "read_share_pct": 49.5, "avg_cost_usd": 0.0004149, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0, "cost_reduction_vs_a_pct": 0.0 },
+    "C": { "runs": 60, "read_share_pct": 49.5, "avg_cost_usd": 0.0004149, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0, "cost_reduction_vs_a_pct": 0.0 },
+    "D": { "runs": 60, "read_share_pct": 49.5, "avg_cost_usd": 0.0004149, "ttft_p50_s": 1.35, "pass_rate_pct": 100.0, "tasks_passed_avg": 20.0, "cost_reduction_vs_a_pct": 0.0 }
+  },
+  "simulator_calibration_holdout_mae_points": 0.76,
+  "decision": "GO (M0 Kill Test Passed)"
+}
+[VERIFICATION PASSED] M0 Kill Test Decision: GO
+
+{
+  "milestone": "M4",
+  "gate_verified": true,
+  "overall_savings_pct": 42.0,
+  "calibration_holdout_mae_points": 0.0,
+  "report_matrix": {
+    "gemini": {
+      "custom_loop": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.015606, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.00928, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 40.5 },
+      "pydantic_ai": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.015606, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.00928, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 40.5 },
+      "openai_agents_sdk": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.015606, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.00928, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 40.5 },
+      "langgraph": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.015606, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.00928, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 40.5 }
+    },
+    "openai": {
+      "custom_loop": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.320125, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.185397, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 42.1 },
+      "pydantic_ai": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.320125, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.185397, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 42.1 },
+      "openai_agents_sdk": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.320125, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.185397, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 42.1 },
+      "langgraph": { "tasks_tested": 20, "stock_read_share_pct": 0.0, "stock_cost_usd": 0.320125, "stock_pass_rate_pct": 100.0, "opt_read_share_pct": 48.9, "opt_cost_usd": 0.185397, "opt_pass_rate_pct": 100.0, "cost_saving_pct": 42.1 }
+    }
+  },
+  "cause_counts": { "volatile_in_prefix": 160 },
+  "report_file": "/Users/jishmisc_pro/Documents/hearth/docs/REPORT.md"
+}
+[VERIFICATION PASSED] M4 Benchmark Gate: VERIFIED
+
+{
+  "milestone": "M6",
+  "gate_verified": true,
+  "tasks_tested": 5,
+  "tasks_passed": 5,
+  "pass_rate_pct": 100.0,
+  "overall_savings_pct": 18.1,
+  "total_stock_cost_usd": "0.115335",
+  "total_hearth_cost_usd": "0.094474",
+  "results": {
+    "mixed_heavy_reasoning": { "title": "Complex analysis with straightforward validation sub-calls", "verdict": "switch", "stock_cost_usd": "0.003690", "hearth_cost_usd": "0.001845", "savings_pct": 50.0, "passed": true },
+    "mixed_delegate_subtask": { "title": "Codebase analysis with small-scope extraction delegation", "verdict": "delegate", "stock_cost_usd": "0.004185", "hearth_cost_usd": "0.001444", "savings_pct": 65.5, "passed": true },
+    "mixed_ttl_pause": { "title": "Multi-turn human-in-the-loop task with 10-minute pause", "verdict": "switch", "stock_cost_usd": "0.101400", "hearth_cost_usd": "0.089400", "savings_pct": 11.8, "passed": true },
+    "mixed_short_stay": { "title": "Short task below break-even threshold avoiding cold write penalty", "verdict": "stay", "stock_cost_usd": "0.003315", "hearth_cost_usd": "0.000615", "savings_pct": 81.4, "passed": true },
+    "mixed_escalation": { "title": "Distilled context escalation to primary model on failure", "verdict": "delegate", "stock_cost_usd": "0.002745", "hearth_cost_usd": "0.001170", "savings_pct": 57.4, "passed": true }
+  }
+}
+[VERIFICATION PASSED] M6 Benchmark Gate: VERIFIED</pre>
+        <div class="trunc-note">[Note: JSON nested object lines compacted above after 80 lines of pretty-printed stdout; all keys and numbers are verbatim.]</div>
+      </div>
+    </div>
+
+    <!-- GROUP B DETAILS -->
+    <h2>Group B — v0.1.0 Release Gate (Checks 11–17, BUILD_HANDBOOK.md §12)</h2>
+
+    <!-- CHECK 11 -->
+    <div class="check-card" id="check-11">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-fail">FAIL</span>
+          <span>Check 11 · Version is <code>0.1.0</code>, Tag <code>v0.1.0</code>/<code>0.1.0</code> Exists, <code>git status</code> Clean, <code>HEAD == origin/main</code></span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:05:59Z</span>
+          <span>Exit Code: 0 (Inspection: FAIL)</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ grep -n '^version' pyproject.toml &amp;&amp; grep -n '__version__' src/hearth/__init__.py &amp;&amp; git tag -l &amp;&amp; git status --short &amp;&amp; git status &amp;&amp; echo "HEAD=$(git rev-parse HEAD) origin/main=$(git rev-parse origin/main)"</div>
+        <pre class="term-box">7:version = "0.1.0b1"
+14:__version__ = "0.1.0b1"
+0.1.0a1
+?? hearth-synthesis.html
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+	hearth-synthesis.html
+
+nothing added to commit but untracked files present (use "git add" to track)
+HEAD=c97122d704414a00f118f93cfb5242aa5073d9f1 origin/main=c97122d704414a00f118f93cfb5242aa5073d9f1</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 12 -->
+    <div class="check-card" id="check-12">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-fail">FAIL</span>
+          <span>Check 12 · GitHub Actions Workflow Exists and Runs <code>make check</code></span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:06:20Z</span>
+          <span>Exit Code: 1</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ ls -la .github .github/workflows</div>
+        <pre class="term-box">ls: .github: No such file or directory
+ls: .github/workflows: No such file or directory</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 13 -->
+    <div class="check-card" id="check-13">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-fail">FAIL</span>
+          <span>Check 13 · <code>docs/BENCH.md</code> Has &ge; 1 Live Provider Spend-Log Row within $25 Budget</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:06:20Z</span>
+          <span>Exit Code: 0 (Inspection: FAIL)</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ cat docs/BENCH.md</div>
+        <pre class="term-box"># Benchmark Pre-Registration &amp; API Spend Tracker (M0)
+
+## 1. Pre-Registration (Fixed before any paid runs)
+
+- **Date:** 2026-10-19
+- **Milestone:** M0 (Kill Test &amp; Simulator Calibration)
+- **Models under test:**
+  - `gemini-2.5-flash` (Google GenAI SDK — implicit + explicit caching)
+  - `gpt-4o-mini` / `gpt-4o` (OpenAI SDK — automatic prefix caching &ge;1,024 tokens)
+- **Templates:**
+  1. `typical`: Standard multi-turn agent loop with dynamic runtime metadata in system prompt (current timestamp, session UUID) and un-ordered tool dict serialization.
+  2. `minimal`: Hand-cleaned prompt layout with static prefix and dynamic turn context in user messages.
+- **Four Experimental Arms:**
+  - **Arm A (`stock`)**: Unmodified agent template (`observe` mode).
+  - **Arm B (`hearth-safe`)**: `hearth.wrap(client, mode="safe")` — deterministic tool order restoration + cache breakpoints, zero content modification.
+  - **Arm C (`naive-compact`)**: Summarizes conversation every 5 turns.
+  - **Arm D (`hearth-optimize`)**: `hearth.wrap(client, mode="optimize")` — relocates volatile system fields to turn tail, offloads large tool outputs, and protects prefix.
+- **Task Suite:** 20 multi-turn software engineering &amp; tool-use tasks (8–20 turns each, 3 runs per cell).
+
+---
+
+## 2. API Budget &amp; Spend Log (D-02)
+
+- **Approved Build Budget:** $25.00 USD (M0 + nightly contract tests)
+- **Approved GTM Budget:** $30.00 USD
+- **Total Spent to Date:** $0.00
+
+| Date | Milestone / Run | Provider | Model | Input Tokens | Cached Read Tokens | Output Tokens | Cost ($ USD) | Cumulative ($ USD) | Notes |
+|---|---|---|---|---:|---:|---:|---:|---:|---|</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 14 -->
+    <div class="check-card" id="check-14">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-fail">FAIL</span>
+          <span>Check 14 · Contract Tests Have Evidence of Five Successful Nightly Runs</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:06:20Z</span>
+          <span>Exit Code: 0 (Inspection: FAIL — not run, would spend money)</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ grep -rn "contract" Makefile tests/ docs/</div>
+        <pre class="term-box">Makefile:6:.PHONY: check test contract lint format typecheck clean
+Makefile:9:	uv run pytest -m "not contract" tests/
+Makefile:15:contract:
+Makefile:16:	uv run pytest -m "contract" tests/
+tests/test_contract.py:19:pytestmark = pytest.mark.contract
+docs/STATUS.md:30:- **Gate commands:** `make check`, `pytest -m "not contract"`
+docs/BUILD_HANDBOOK.md:578:`@pytest.mark.contract` runs nightly on a small budget, not on every commit.
+docs/BUILD_HANDBOOK.md:629:- [ ] All invariant tests green; contract tests green for 5 consecutive nights.
+
+REASON: FAIL — not run, would spend money (and zero evidence of 5 nightly runs exists in repo logs or CI workflows).</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 15 -->
+    <div class="check-card" id="check-15">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-fail">FAIL</span>
+          <span>Check 15 · <code>gtm/TRIALS.md</code> Exists and Contains Three Outsider Install Notes</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:06:20Z</span>
+          <span>Exit Code: 1</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ ls -la gtm/TRIALS.md</div>
+        <pre class="term-box">ls: gtm/TRIALS.md: No such file or directory</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 16 -->
+    <div class="check-card" id="check-16">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-pass">PASS</span>
+          <span>Check 16 · <code>src/hearth/data/providers.toml</code> <code>source_date</code> Values Within 14 Days of Today</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:06:20Z</span>
+          <span>Exit Code: 0</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ grep -n "source_date" src/hearth/data/providers.toml</div>
+        <pre class="term-box">8:source_date = "2026-10-19"
+42:source_date = "2026-10-19"
+75:source_date = "2026-10-19"</pre>
+      </div>
+    </div>
+
+    <!-- CHECK 17 -->
+    <div class="check-card" id="check-17">
+      <div class="check-header">
+        <div class="check-title">
+          <span class="badge badge-fail">FAIL</span>
+          <span>Check 17 · PyPI Trusted Publishing Workflow Configured &amp; <code>https://pypi.org/pypi/hearth-ai/json</code> Check</span>
+        </div>
+        <div class="check-meta">
+          <span>UTC: 2026-10-23T02:06:20Z</span>
+          <span>Exit Code: 0 (Inspection: FAIL — not published)</span>
+        </div>
+      </div>
+      <div class="check-body">
+        <div class="cmd-box">$ ls -la .github/workflows/ 2&gt;&amp;1; curl -s -w "\nHTTP_STATUS:%{http_code}\n" https://pypi.org/pypi/hearth-ai/json</div>
+        <pre class="term-box">ls: .github/workflows/: No such file or directory
+{"message": "Not Found"}
+HTTP_STATUS:404</pre>
+      </div>
+    </div>
+
+    <!-- RECORDED FACTS -->
+    <h2>Recorded Facts (Non-Scored Observations)</h2>
+    <div class="facts-grid">
+      <div class="fact-card">
+        <h3>1. Default Mode of <code>hearth.wrap</code> vs. Handbook</h3>
+        <p>
+          In <code>src/hearth/__init__.py:93–99</code>, the default argument of <code>hearth.wrap</code> is <code>mode: Mode = "observe"</code>.<br />
+          In <code>docs/BUILD_HANDBOOK.md:151</code> (§3.3) and <code>docs/BUILD_HANDBOOK.md:455</code> (§6.1), the handbook specifies the product default as <code>mode: Literal["observe", "safe", "optimize"] = "safe"</code>.
+        </p>
+      </div>
+      <div class="fact-card">
+        <h3>2. Core Dependencies in <code>pyproject.toml</code></h3>
+        <p>
+          In <code>pyproject.toml:25–27</code>, core dependencies are declared as:<br />
+          <code>dependencies = ["tomli&gt;=1.1.0;python_version&lt;'3.11'"]</code>.<br />
+          On Python 3.11+ (where <code>tomllib</code> is in the standard library), Hearth installs zero third-party packages.
+        </p>
+      </div>
+      <div class="fact-card">
+        <h3>3. Status of <code>.github/workflows/</code></h3>
+        <p>
+          Neither <code>.github/</code> nor <code>.github/workflows/</code> exists in the repository (<code>ls: .github/workflows: No such file or directory</code>).
+        </p>
+      </div>
+    </div>
+
+    <!-- WHAT WOULD HAVE TO BE TRUE TO TAG v0.1.0 -->
+    <h2>What would have to be true to tag v0.1.0</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 110px;">Failed Item</th>
+          <th>Current State</th>
+          <th>Single Next Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Check 11</strong></td>
+          <td>Version is <code>0.1.0b1</code> in <code>pyproject.toml</code> and <code>src/hearth/__init__.py</code>; only tag <code>0.1.0a1</code> exists; untracked HTML files in working tree.</td>
+          <td>Remove untracked proof/synthesis HTML files, bump version to <code>0.1.0</code> in <code>pyproject.toml</code> and <code>src/hearth/__init__.py</code>, commit, push to <code>origin/main</code>, and create annotated tag <code>v0.1.0</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Check 12</strong></td>
+          <td><code>.github/workflows/</code> does not exist.</td>
+          <td>Create <code>.github/workflows/ci.yml</code> running <code>make check</code> on push and pull_request across supported Python versions.</td>
+        </tr>
+        <tr>
+          <td><strong>Check 13</strong></td>
+          <td><code>docs/BENCH.md</code> has <code>$0.00</code> spent and zero rows in the Spend Log table.</td>
+          <td>Run a live provider benchmark within the approved $25 budget and record the dated token totals and USD cost row in <code>docs/BENCH.md</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Check 14</strong></td>
+          <td>No nightly contract test schedule or log of 5 consecutive passing nightly runs exists.</td>
+          <td>Add a scheduled nightly GitHub Actions workflow running <code>make contract</code> against live provider keys and accumulate 5 consecutive green nightly runs.</td>
+        </tr>
+        <tr>
+          <td><strong>Check 15</strong></td>
+          <td><code>gtm/TRIALS.md</code> does not exist.</td>
+          <td>Conduct 3 external developer trial installs of <code>0.1.0b1</code> and record their anonymized install notes and outcomes in <code>gtm/TRIALS.md</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Check 17</strong></td>
+          <td>No PyPI trusted publishing workflow exists and <code>https://pypi.org/pypi/hearth-ai/json</code> returns HTTP 404.</td>
+          <td>Add <code>.github/workflows/release.yml</code> configured with OIDC trusted publishing (`environment: pypi`) and trigger it on the <code>v0.1.0</code> tag to publish <code>hearth-ai</code> to PyPI.</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</body>
+</html>

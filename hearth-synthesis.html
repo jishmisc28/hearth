@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hearth — what it is, what it does, where it stands</title>
+<style>
+  :root {
+    --paper: #f7f4ee;
+    --ink: #1c1917;
+    --muted: #57534e;
+    --faint: #a8a29e;
+    --line: #e4ddd2;
+    --ember: #9a3412;
+    --ember-soft: #f3e6dc;
+    --stable: #14532d;
+    --stable-soft: #e7f0e8;
+    --caution: #854d0e;
+    --caution-soft: #f8f1dc;
+    --code: #efeae2;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+    font-size: 19px;
+    line-height: 1.55;
+  }
+  a { color: var(--ember); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  code, .mono {
+    font-family: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.84em;
+  }
+  code {
+    background: var(--code);
+    padding: 0.08em 0.35em;
+    border-radius: 3px;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 740px);
+    gap: 48px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 48px 28px 96px;
+  }
+  nav {
+    position: sticky;
+    top: 28px;
+    align-self: start;
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  nav p {
+    margin: 0 0 12px;
+    color: var(--faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+  nav a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 5px 0;
+  }
+  nav a:hover { color: var(--ink); }
+  h1 {
+    font-size: 42px;
+    line-height: 1.1;
+    font-weight: 500;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .kicker {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin: 0 0 16px;
+  }
+  .lede {
+    font-size: 22px;
+    line-height: 1.4;
+    margin: 0 0 28px;
+  }
+  .meta {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 12px 0;
+    margin-bottom: 40px;
+  }
+  h2 {
+    font-size: 28px;
+    font-weight: 500;
+    margin: 56px 0 12px;
+    letter-spacing: -0.015em;
+  }
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 32px 0 8px;
+  }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 16px; padding-left: 1.2em; }
+  li { margin: 0 0 8px; }
+  .callout {
+    border-left: 3px solid var(--ember);
+    background: var(--ember-soft);
+    padding: 14px 16px;
+    margin: 20px 0 24px;
+  }
+  .callout.green {
+    border-left-color: var(--stable);
+    background: var(--stable-soft);
+  }
+  .callout.amber {
+    border-left-color: var(--caution);
+    background: var(--caution-soft);
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+    margin: 8px 0 22px;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 9px 10px 9px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .path {
+    display: grid;
+    gap: 0;
+    margin: 16px 0 24px;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .step:last-child { border-bottom: 1px solid var(--line); }
+  .n {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 13px;
+    color: var(--ember);
+    padding-top: 3px;
+  }
+  .step strong { font-weight: 600; }
+  .step .where {
+    display: block;
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .bars {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0 24px;
+  }
+  .bar-label {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .bar {
+    display: flex;
+    height: 28px;
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 12px;
+    color: #fff;
+    overflow: hidden;
+  }
+  .bar span { display: flex; align-items: center; padding: 0 8px; white-space: nowrap; }
+  .s-static { background: #1c1917; }
+  .s-session { background: #44403c; }
+  .s-append { background: #78716c; }
+  .s-turn { background: var(--ember); }
+  .s-volatile { background: #b45309; }
+  .entity {
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+  .entity h3 { margin: 0 0 6px; }
+  .entity .file {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 12px 0 20px;
+  }
+  .card {
+    border: 1px solid var(--line);
+    padding: 14px 16px;
+  }
+  .card h3 { margin-top: 0; }
+  .card p:last-child { margin-bottom: 0; }
+  .status {
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .done { color: var(--stable); }
+  .wait { color: var(--caution); }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 15px;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 12px; padding: 28px 18px 64px; }
+    nav { position: static; }
+    nav a { display: inline; margin-right: 12px; }
+    h1 { font-size: 34px; }
+    .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <p>Contents</p>
+  <a href="#idea">The idea</a>
+  <a href="#mechanism">The mechanism</a>
+  <a href="#modes">Three modes</a>
+  <a href="#call">One call, in order</a>
+  <a href="#places">Five places text can live</a>
+  <a href="#entities">The pieces</a>
+  <a href="#breaks">Why a cache dies</a>
+  <a href="#built">What is built</a>
+  <a href="#made">How it was made</a>
+  <a href="#can">What it can do</a>
+  <a href="#numbers">How to read the numbers</a>
+  <a href="#next">Can we continue</a>
+</nav>
+<main>
+  <p class="kicker">Hearth · synthesis · 20 October 2026</p>
+  <h1>What this project is, in language you can reason with</h1>
+  <p class="lede">Hearth is a Python library that sits inside an agent’s own process, on the path between the agent’s code and the model company. On every call it keeps the stable beginning of the prompt identical, records what the cache did, and — only if you ask — moves the bits that would have broken that cache.</p>
+  <p class="meta">Package <code>hearth-ai</code>, import <code>hearth</code>, version <code>0.1.0b1</code>. Public repo <code>jishmisc28/hearth</code>. Tag on GitHub: <code>0.1.0a1</code>. Not on PyPI. Written 19 October 2026. This page is a reading copy of the code and the status log, dated 20 October 2026.</p>
+
+  <h2 id="idea">The idea</h2>
+  <p>An agent is a loop. Step 30 sends the system instructions, the tool definitions, and every earlier message again, then adds one new piece. The model company already saw the beginning of that text. If the beginning is byte-for-byte the same, they charge about a tenth of the normal input price for it, and the first token often arrives sooner. If one byte near the start changes, they charge full price for everything after it.</p>
+  <p>Memory, shortening the history, parking a huge tool result, and switching to a cheaper model all look like separate features. Each one is a decision about that text, and each one has a cache price. Hearth is the place those decisions are made together, with the price written down in exact decimal arithmetic.</p>
+  <div class="callout">
+    <p>It is a library. The agent’s framework stays the agent’s framework. There is no server to run, no proxy in front of the API, and no user interface. You install it and wrap the client you already have.</p>
+  </div>
+
+  <h2 id="mechanism">The mechanism, without the product words</h2>
+  <p>Providers match the cache from the first byte. A line like <code>Current time: 2026-10-20T10:55:00</code> at the top of the system prompt changes on every step. The tools, the instructions, and the whole conversation after that line miss the cache, even though none of them changed.</p>
+  <p>The fix is placement. Text that must stay identical lives at the front. Text that changes every turn lives at the end, after the last cached position. The model still sees the time. The cache still sees a stable prefix.</p>
+  <div class="bars" aria-label="Two layouts of the same prompt">
+    <div>
+      <div class="bar-label">Broken layout — the clock is first, so the cache misses the rest</div>
+      <div class="bar">
+        <span class="s-volatile" style="flex:1.4">time</span>
+        <span class="s-static" style="flex:2">instructions</span>
+        <span class="s-static" style="flex:1.4">tools</span>
+        <span class="s-append" style="flex:3">history</span>
+        <span class="s-turn" style="flex:1.2">new turn</span>
+      </div>
+    </div>
+    <div>
+      <div class="bar-label">Stable layout — the clock is last, so the front can be read from cache</div>
+      <div class="bar">
+        <span class="s-static" style="flex:2">instructions</span>
+        <span class="s-static" style="flex:1.4">tools</span>
+        <span class="s-append" style="flex:3">history</span>
+        <span class="s-turn" style="flex:1.2">new turn</span>
+        <span class="s-volatile" style="flex:1.4">time</span>
+      </div>
+    </div>
+  </div>
+  <p>A worked illustration from the handbook, labeled there as arithmetic, not a measurement: 30 steps, context growing from 10,000 to 70,000 tokens, about 1.2 million input tokens. With no cache hits that is 1.2 million units of the base price. If 85% is read at 0.1× and the rest is written at 1.25×, the bill is about 0.27 of the uncached cost. One timestamp at the front returns the bill to full price.</p>
+
+  <h2 id="modes">Three promises, chosen by a mode</h2>
+  <p>Adoption is a mode, because changing an agent’s prompt is a behaviour change. The default in the design is <code>safe</code>. The function’s own default argument is still <code>observe</code>, which is the first-run setting.</p>
+  <table>
+    <thead>
+      <tr><th>Mode</th><th>What leaves the process</th><th>What you get</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>observe</code></td>
+        <td>The original request, byte for byte. Hearth does not “improve” it.</td>
+        <td>A measurement and a diagnosis. Useful on the first day, when you want to see the damage without touching the agent.</td>
+      </tr>
+      <tr>
+        <td><code>safe</code></td>
+        <td>The same messages, the same tool text, the same words. Order of tools may be put back to the order seen on the first call of the session. Cache markers may be added.</td>
+        <td>Protection against accidental reordering, plus a plan for where the provider should keep a cache breakpoint.</td>
+      </tr>
+      <tr>
+        <td><code>optimize</code></td>
+        <td>The same task, with documented moves: a timestamp pulled out of the system prompt into the latest user turn; a huge tool result replaced by a short stub, if the app registered a tool to read the original back.</td>
+        <td>The layout fix. This is opt-in because the bytes the model sees do change, even though the meaning is meant to stay.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><code>strict=True</code> is separate from the mode. If the guard sees a break that the application caused, it raises <code>HearthPrefixBreak</code> before the request is sent. That is for tests. If Hearth itself throws, the original request still goes out and the event is recorded as <code>hearth_error</code>. A bug in the library is not allowed to stop the agent.</p>
+
+  <h2 id="call">What one call actually does</h2>
+  <p>You write <code>client = hearth.wrap(client, mode="safe")</code>. The object you get back is a proxy. When the agent calls the method that sends a completion, this sequence runs. The response the agent receives is the provider’s response.</p>
+  <div class="path">
+    <div class="step"><div class="n">1</div><div><strong>Intercept.</strong> The proxy catches the call. In <code>observe</code> it stops here for edits and sends the original arguments.<span class="where">src/hearth/wrapper.py · WrappedMethod.__call__</span></div></div>
+    <div class="step"><div class="n">2</div><div><strong>Restore tool order, only in safe and optimize.</strong> The first time a session sees a set of tools, that order is remembered. If a later call sends the same tools in a different order, they are put back. The tool text is unchanged. The restoration is written into the trace.<span class="where">wrapper.py · _process_safe_request</span></div></div>
+    <div class="step"><div class="n">3</div><div><strong>Relocate and offload, only in optimize.</strong> Lines in the system prompt that look like a timestamp, a UUID, a git commit, or a branch name are moved onto the latest user message. Tool outputs over the size threshold can be replaced with a content-addressed stub.<span class="where">src/hearth/layout.py · src/hearth/offload.py</span></div></div>
+    <div class="step"><div class="n">4</div><div><strong>Cut the request into segments.</strong> Tools, system text, earlier messages, and the newest message are labeled by how stable they are allowed to be.<span class="where">src/hearth/segments.py · segment_request</span></div></div>
+    <div class="step"><div class="n">5</div><div><strong>Compare with the previous call.</strong> The prefix guard finds the first real difference and names a cause. Some causes are the application’s. Some are the provider’s, or the prompt simply being too short to cache. The second group is never reported as your fault.<span class="where">src/hearth/guard.py · PrefixGuard</span></div></div>
+    <div class="step"><div class="n">6</div><div><strong>Decide whether a cache marker is worth sending.</strong> Anthropic allows at most four breakpoints, and a one-hour marker has to sit before a five-minute one. A one-shot call should not pay a cache-write premium. If you have said a human pause is coming, the stable front can take the longer lifetime.<span class="where">src/hearth/planner.py · plan_breakpoints, TTLOptimizer</span></div></div>
+    <div class="step"><div class="n">7</div><div><strong>Send, then read the bill.</strong> The provider’s usage fields are translated into three numbers that must add up: tokens read from cache, tokens written into cache, tokens charged in full. Cost is computed from the dated price table with <code>Decimal</code>, never with floating point.<span class="where">src/hearth/adapters/ · src/hearth/cost.py</span></div></div>
+    <div class="step"><div class="n">8</div><div><strong>Record the summary, not the prompt.</strong> A SQLite ledger stores token counts, cost, and break counts. A JSONL trace stores fingerprints. Prompt and response text are stored only when <code>record=True</code>. An OpenTelemetry span can carry the same counts.<span class="where">src/hearth/ledger.py · src/hearth/trace.py · src/hearth/otel.py</span></div></div>
+  </div>
+
+  <h2 id="places">Five places a piece of text is allowed to live</h2>
+  <p>This is the vocabulary the rest of the library uses. The class is a rule about when the text may change.</p>
+  <table>
+    <thead>
+      <tr><th>Class</th><th>What belongs there</th><th>The rule</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>STATIC</td><td>Tool definitions. Core instructions.</td><td>Set once for the session. Any change is a prefix break.</td></tr>
+      <tr><td>SESSION</td><td>Facts pinned when the session starts. Project rules. A user profile.</td><td>May change between sessions. A mid-session update goes to the tail, so the cached front stays put.</td></tr>
+      <tr><td>APPEND</td><td>The conversation so far.</td><td>Add to the end. Do not rewrite an earlier message, except through a recorded compaction.</td></tr>
+      <tr><td>VOLATILE</td><td>The clock, a git status, a snippet retrieved for this turn.</td><td>Always after the last cached position.</td></tr>
+      <tr><td>TURN</td><td>The new user input or the new tool result.</td><td>Last among the conversation messages.</td></tr>
+    </tbody>
+  </table>
+  <p>In code these are <code>StabilityClass</code> and <code>Segment</code> in <code>src/hearth/segments.py</code>. A fingerprint is a deterministic hash of a message, so two processes agree on whether two prompts are the same without storing the text. That lives in <code>src/hearth/fingerprint.py</code>.</p>
+
+  <h2 id="entities">The pieces, named</h2>
+  <p>Each name below is a real object in the tree. Together they are the whole library. There are 39 Python modules under <code>src/hearth/</code>.</p>
+
+  <div class="entity">
+    <h3>wrap, session, volatile</h3>
+    <span class="file">src/hearth/__init__.py</span>
+    <p><code>wrap</code> returns the proxy. <code>session</code> is a context manager that gives the call a name and a place to hang hints: <code>expect_pause()</code> for a human review, <code>expect_calls(n)</code> for how many steps you think remain. <code>volatile(text)</code> marks text that must ride in the tail. The active session is kept in a <code>ContextVar</code>, so concurrent async tasks do not share one session by accident.</p>
+  </div>
+  <div class="entity">
+    <h3>Prefix guard</h3>
+    <span class="file">src/hearth/guard.py · BreakEvent</span>
+    <p>Compares this call with the previous one in a fixed order: too short to cache, idle longer than the lifetime, provider reported a miss on an identical prefix, then parameter changes, tool edits, tool reordering, a volatile pattern in the prefix, a system-prompt edit, a rewritten history. The first match wins. Four causes are defined as never the user’s fault: <code>below_minimum</code>, <code>short_session</code>, <code>ttl_expired</code>, <code>provider_miss</code>.</p>
+  </div>
+  <div class="entity">
+    <h3>Cache planner and TTL optimizer</h3>
+    <span class="file">src/hearth/planner.py · CachePlan, Breakpoint, TTLOptimizer</span>
+    <p>A breakpoint is a mark that tells Anthropic “cache up to here.” The planner rations them. The optimizer chooses 5 minutes or 1 hour for the stable front. A 5-minute write costs 1.25× the input price. A 1-hour write costs 2×. If a pause longer than five minutes is coming, paying 2× once is cheaper than paying 1.25× again on every resume. The choice is made once per session, because changing the lifetime on an identical prefix is treated as a fresh write.</p>
+  </div>
+  <div class="entity">
+    <h3>Provider adapters and the price table</h3>
+    <span class="file">src/hearth/adapters/ · src/hearth/cost.py · src/hearth/data/providers.toml</span>
+    <p>Anthropic, OpenAI, and Gemini report cache usage in different fields. Each adapter turns that report into <code>read</code>, <code>write</code>, and <code>uncached</code>, and those three must equal the provider’s total input. Prices, minimum prefix lengths, and lifetimes live only in <code>providers.toml</code>, each with a source URL and the date 2026-10-19. Nothing in the Python hard-codes a price.</p>
+  </div>
+  <div class="entity">
+    <h3>Ledger and trace</h3>
+    <span class="file">src/hearth/ledger.py · src/hearth/trace.py</span>
+    <p>The ledger is SQLite: one row per call, with counts and a dollar cost, and no prompt text. The trace is JSONL for later replay. Bodies are omitted unless recording was turned on. That split is how you can debug a cache without copying customer prompts into a log.</p>
+  </div>
+  <div class="entity">
+    <h3>Layout, offload, compaction</h3>
+    <span class="file">src/hearth/layout.py · src/hearth/offload.py · src/hearth/compaction.py</span>
+    <p>Layout is the timestamp move. Offload replaces a large tool result with a hash stub, and the application can read the original back through <code>hearth.tools.read_offloaded</code>. Compaction is the decision to summarize old history. Summarizing is not free: you pay to write the summary, and you pay a cache-write on the new prefix. The model computes a payback horizon. On the bench study, a 50,000-token history pays back only if about eight more calls remain. Below that, trimming costs more than it saves.</p>
+  </div>
+  <div class="entity">
+    <h3>Memory</h3>
+    <span class="file">src/hearth/memory/store.py · checks.py · recall.py</span>
+    <p>Facts live in SQLite, default <code>~/.hearth/memory.sqlite</code>, with full-text search. A fact is never overwritten in place. When it changes, the old row gets <code>valid_to</code> and <code>superseded_by</code>, and a new row starts. Writes are checked first: length, secrets, and phrases that look like “ignore previous instructions.” Facts pinned at session start go into the SESSION prefix. A fact written in the middle of a session goes to that turn’s tail, so it cannot invalidate the cache that is already warm.</p>
+  </div>
+  <div class="entity">
+    <h3>Switch or stay</h3>
+    <span class="file">src/hearth/policies/route.py · RouteDecision</span>
+    <p>A cheaper model is not automatically cheaper mid-session. Switching means the new model must write the whole prefix cold. The library computes the number of remaining calls at which the switch pays for itself: if model B costs fraction <em>q</em> of model A, the threshold is <em>q · w / (r · (1 − q))</em>. Below that, the verdict is stay. A third verdict, delegate, runs a small sub-task on a cheap model with only the tokens that sub-task needs, and leaves the main prefix cached on the expensive model.</p>
+  </div>
+  <div class="entity">
+    <h3>Simulator, fake provider, bench, replay, guard</h3>
+    <span class="file">src/hearth/sim/ · src/hearth/testing.py · src/hearth/replay.py · src/hearth/cli.py</span>
+    <p><code>FakeProvider</code> returns canned SDK-shaped responses and invents usage numbers from the same rules as <code>providers.toml</code>, so tests need no API key. The simulator replays a trace and predicts read share. <code>hearth replay</code> runs a trace through observe, safe, and optimize and prints cost. <code>hearth guard</code> fails a CI run when a new user-caused break appears against a baseline. <code>hearth report</code> and <code>hearth diagnose</code> read a session and explain the cause.</p>
+  </div>
+  <div class="entity">
+    <h3>Framework adapters</h3>
+    <span class="file">src/hearth/integrations/</span>
+    <p>LangGraph gets a middleware class. Pydantic AI gets a wrapper around the client the model object already holds. The OpenAI Agents SDK gets its default client replaced, so agents created afterwards inherit the wrap. The core package does not depend on any of those frameworks. You install the framework yourself.</p>
+  </div>
+
+  <h2 id="breaks">Why a cache dies</h2>
+  <p>The cause list is data, in <code>src/hearth/data/breaks.yaml</code>, and the human copy is <code>docs/BREAKS.md</code>. Fifteen codes. The grouping that matters for reasoning:</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>The bill, not a bug in your agent</h3>
+      <p>The prompt is shorter than the provider’s minimum. The session was one call, so a cache write had nothing to read. The gap between calls was longer than the lifetime. The prefix was identical and the provider still reported zero reads.</p>
+    </div>
+    <div class="card">
+      <h3>Something in the application moved</h3>
+      <p>Model or parameters changed. A tool was added, removed, or edited. The same tools arrived in a new order. A clock or id sat in the prefix. The system prompt was edited. History was rewritten. A session fact was injected into the front mid-conversation.</p>
+    </div>
+  </div>
+  <p>Safe mode repairs the reorder case. Optimize mode repairs the clock-in-the-prefix case and the oversized tool-result case. The other application causes are diagnosed and explained. Hearth does not silently rewrite history to hide them.</p>
+
+  <h2 id="built">What has been built</h2>
+  <p>The plan was eight milestones over ten weeks, with a kill test first. All eight were recorded on one day, 19 October 2026. The code for each milestone is in the tree and the local test run that day was green: 56 tests, 16 named invariants, strict type check clean, no required third-party packages on Python 3.11 and newer.</p>
+  <table>
+    <thead>
+      <tr><th></th><th>Capability that exists</th><th>Recorded result</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="status done">M0</td><td>Observe mode, traces, decimal costs, 20 canned tasks, a simulator kill test.</td><td>Marked GO. Arm D in the simulator: about 49% read share and 43% lower cost than a typical stock prompt that puts a timestamp first.</td></tr>
+      <tr><td class="status done">M1</td><td>Safe wrap, guard, planner, three adapters, ledger, report, diagnose, OpenTelemetry.</td><td>Invariants for identity, append-only history, usage reconciliation, fail-open, and money-as-decimal are present.</td></tr>
+      <tr><td class="status done">M2</td><td>Optimize layout, offload, compaction payback, the break catalogue.</td><td>Simulator: optimize cheaper than safe, 20 of 20 tasks passed. Compaction mean payback about 8 further calls.</td></tr>
+      <tr><td class="status done">M3</td><td>LangGraph, Pydantic AI, OpenAI Agents hooks.</td><td>Mini-suites recorded at 100% pass, offline.</td></tr>
+      <tr><td class="status done">M4</td><td>Replay, CI guard, fake provider, frozen report.</td><td><code>docs/REPORT.md</code> says 42.0% cost reduction across 20 tasks.</td></tr>
+      <tr><td class="status done">M5</td><td>Temporal facts, write checks, cache-safe placement.</td><td>Memory tasks recorded at 100% pass.</td></tr>
+      <tr><td class="status done">M6</td><td>Stay / switch / delegate, and the 1-hour TTL choice. Version set to <code>0.1.0b1</code>.</td><td>Simulator: 18.1% savings on 5 mixed tasks, none lost.</td></tr>
+      <tr><td class="status wait">M7</td><td>License, README, a latency microbench, providers file re-dated.</td><td>Docs are done. Release is waiting. See the last section.</td></tr>
+    </tbody>
+  </table>
+  <p>Overhead measured in-process, with garbage collection paused for the timing loop: median 0.66 ms and 99th percentile 1.08 ms at about 50,000 tokens of context. The budget was 2 ms and 5 ms. That number is CPU time inside Hearth, not time-to-first-token from a provider.</p>
+
+  <h2 id="made">How it was made</h2>
+  <ul>
+    <li>Language and runtime: Python 3.10 and newer. Packaging with hatchling. Day-to-day tool is <code>uv</code>. Checks are <code>ruff</code>, <code>mypy --strict</code> on <code>src/hearth</code>, and <code>pytest</code>, wrapped as <code>make check</code>.</li>
+    <li>Dependencies: the core imports the standard library. On 3.10 only, <code>tomli</code> reads the price file, because <code>tomllib</code> arrived in 3.11. Optional extras exist for the Anthropic, OpenAI, and Gemini SDKs, and for OpenTelemetry. The framework integrations do not pull those frameworks into the core install.</li>
+    <li>Specification: <code>docs/BUILD_HANDBOOK.md</code> is the spec. <code>docs/STATUS.md</code> is the log. <code>docs/DECISIONS.md</code> is the decision list. Provider facts are data, not code.</li>
+    <li>Correctness is a list of named tests. Observe must be byte-identical. Safe must not change content. Money must be <code>Decimal</code>. A miss caused by expiry, length, or the provider must not be blamed on the user. Those rules are what the 16 invariants lock.</li>
+    <li>The build was compressed. The handbook’s calendar is ten weeks. The git history from scaffold to the release-gate note is a single day of commits. The structure matches the handbook. The calendar does not.</li>
+  </ul>
+
+  <h2 id="can">What it can do today</h2>
+  <p>On a machine with the repo, or once the package is installed from it:</p>
+  <ul>
+    <li>Wrap a Gemini, OpenAI, or Anthropic client and leave the request untouched while recording cache accounting.</li>
+    <li>Wrap it in safe mode and have tool order restored when the same tools come back shuffled.</li>
+    <li>Wrap it in optimize mode and have timestamp-like lines moved out of the system prompt.</li>
+    <li>Ask, after a session, what broke the prefix and what it cost, with <code>hearth report</code> and <code>hearth diagnose</code>.</li>
+    <li>Replay a trace offline through the three modes.</li>
+    <li>Fail a test run when a new user-caused break shows up, with <code>hearth guard</code>.</li>
+    <li>Store facts that supersede instead of overwrite, and that refuse secrets and instruction-override text.</li>
+    <li>Ask whether staying, switching, or delegating is the cheaper next step, given the price table and the remaining calls.</li>
+    <li>Drop the same wrap into LangGraph, Pydantic AI, or the OpenAI Agents SDK without those libraries becoming dependencies of Hearth itself.</li>
+  </ul>
+
+  <h2 id="numbers">How to read the numbers</h2>
+  <div class="callout amber">
+    <p>The 42% cost reduction, the 49% read share, the 18% routing saving, and the 0.00 calibration error are outputs of Hearth’s own simulator and fake provider. <code>docs/BENCH.md</code> records $0.00 of provider spend. No live kill test has been logged. The calibration error of zero is the simulator agreeing with itself.</p>
+  </div>
+  <p>The report file also prints the same read share and the same dollar figures for every framework row. That is what you get when one layout scenario is scored four times, not when four real agents were run on two companies’ APIs. The handbook’s kill test was three live runs per task per arm, on named models, with the spend written down. That run is the measurement that would turn the 42% into a claim.</p>
+  <p>The local tests are a different kind of evidence, and they are real: the identity rules, the usage arithmetic, the fail-open path, and the decimal costs were executed on 19 October and passed. They prove the library behaves as specified against fixtures. They do not prove a provider bill moved.</p>
+
+  <h2 id="next">Can we continue</h2>
+  <p>Yes. The library is far enough along that the next progress is proof and publication, not a new subsystem. The handbook’s release checklist, section 12, is the list. Here is where each line stands on 20 October 2026.</p>
+  <table>
+    <thead>
+      <tr><th>Release line</th><th>Standing</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Invariant tests green</td><td>Green locally on 19 October. There is no GitHub Actions workflow, so GitHub is not re-running them.</td></tr>
+      <tr><td>Five nights of live contract tests</td><td>Not started. The contract target exists in the Makefile. The spend log is empty. Approved budget for this is $25.</td></tr>
+      <tr><td>Report reproduced from the bench command</td><td>The command exists and the file is frozen. It reproduces the simulator. It does not yet reproduce a live bill.</td></tr>
+      <tr><td>Three other people install <code>0.1.0b1</code>, wrap a real agent, and get a report</td><td>Not done. <code>gtm/TRIALS.md</code> does not exist.</td></tr>
+      <tr><td>Price table dated within 14 days of release</td><td>Dated 19 October 2026. Inside the window if a release happens this month.</td></tr>
+      <tr><td>PyPI, tag <code>v0.1.0</code>, your go</td><td>Not published. Trusted publishing is not configured. The version in the tree is <code>0.1.0b1</code>. You have not approved the tag.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout green">
+    <p>Continuing means four pieces of work, in this order. Run the live kill test inside the $25 budget and write the token totals into <code>docs/BENCH.md</code>. Run the nightly contract test for five nights. Have three people outside the build try <code>0.1.0b1</code> and keep their notes. Then decide the tag and the PyPI upload with those notes in front of you. The code does not need another milestone before that decision.</p>
+  </div>
+  <p>After a real 0.1.0, the handbook’s own next item is a TypeScript port. It is explicitly after this release. Memory, routing, and the guard are already in the Python tree, so further product work is refinement of those, or the live evidence they still lack.</p>
+
+  <footer>
+    <p>Sources for this page: <code>docs/BUILD_HANDBOOK.md</code>, <code>docs/STATUS.md</code>, <code>docs/DECISIONS.md</code>, <code>docs/BENCH.md</code>, <code>docs/REPORT.md</code>, and the modules named above. Open this file in a browser. It has no scripts and no network requests.</p>
+  </footer>
+</main>
+</div>
+</body>
+</html>

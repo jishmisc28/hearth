@@ -1,0 +1,55 @@
+=== HEARTH v0.1 OFFLINE DEMO RECORDING (2026-10-23T02:14:34Z) ===
+
+--- [Check 3] observe mode byte-identical passthrough ---
+IN_BYTES : {"messages": [{"content": "Hello world", "role": "user"}], "model": "claude-3-5-sonnet-20241022", "session_id": "demo-observe", "system": "You are a precise assistant.\nTimestamp: 2026-10-23T02:00:00Z", "tools": [{"description": "Z", "name": "z_tool"}, {"description": "A", "name": "a_tool"}]}
+OUT_BYTES: {"messages": [{"content": "Hello world", "role": "user"}], "model": "claude-3-5-sonnet-20241022", "session_id": "demo-observe", "system": "You are a precise assistant.\nTimestamp: 2026-10-23T02:00:00Z", "tools": [{"description": "Z", "name": "z_tool"}, {"description": "A", "name": "a_tool"}]}
+BYTE_IDENTICAL: True LEN: 293 vs 293
+
+--- [Check 4] safe mode first-seen tool order restoration ---
+CALL 2 TOOLS IN (shuffled): [{"name": "run_tests", "description": "Execute pytest suite"}, {"name": "read_file", "description": "Read a file from disk"}, {"name": "grep_search", "description": "Search regex in repo"}]
+CALL 2 TOOLS OUT (restored): [{"name": "read_file", "description": "Read a file from disk"}, {"name": "grep_search", "description": "Search regex in repo"}, {"name": "run_tests", "description": "Execute pytest suite"}]
+CALL 2 TRACE CHANGES: [{"kind": "tool_order_restored", "first_seen_order": ["read_file", "grep_search", "run_tests"], "reordered_order": ["run_tests", "read_file", "grep_search"], "details": "Restored first-seen tool order to protect prefix cache"}]
+
+--- [Check 5] optimize mode volatile ISO timestamp relocation ---
+BEFORE (input system)  : 'You are a senior Python engineer.\nCurrent time: 2026-10-23T02:09:00Z\nFollow PEP 8 strictly.'
+BEFORE (input messages): [{"role": "user", "content": "Refactor src/hearth/layout.py"}]
+AFTER  (sent system)   : 'You are a senior Python engineer.\nFollow PEP 8 strictly.'
+AFTER  (sent messages) : [{"role": "user", "content": "Refactor src/hearth/layout.py\n\n[Runtime Context:\nCurrent time: 2026-10-23T02:09:00Z]"}]
+TRACE CHANGES          : [{"kind": "volatile_relocated", "source": "system", "target_message_index": 0, "snippets": ["Current time: 2026-10-23T02:09:00Z"]}]
+
+--- [Check 6] Anthropic & OpenAI usage reconciliation ---
+ANTHROPIC: read(3500) + write(1000) + uncached(500) = 5000 == total_input(5000)
+OPENAI   : read(2800) + write(500) + uncached(700) = 4000 == total_input(4000)
+
+--- [Check 7, 8 & 9] Privacy check, CLI report, diagnose, and replay ---
+
+Session Report: sess-check7
+calls 2 · input 1,974 tok · read 0 (0.0%) · written 0 · uncached 1,974 · output 100
+total cost: $0.00742200 USD
+
+transformations (1):
+  call 2    tool_order_restored    Restored first-seen tool order to protect prefix cache
+
+prefix breaks (3):
+  call 1    below_minimum        Context tokens (967) below provider minimum (2048)
+  call 2    tools_reordered      Restored first-seen tool order in safe mode
+  call 2    below_minimum        Context tokens (992) below provider minimum (2048)
+
+Diagnosing trace: sess-check7.jsonl (session 'sess-check7') · read share 0.0%
+  call 1: level system · cause below_minimum
+    detail: Context tokens (967) below provider minimum (2048)
+    note: prefix below provider caching threshold
+  call 2: level tools · cause tools_reordered
+    detail: Restored first-seen tool order in safe mode
+    fix: mode='safe' will restore first-seen tool order automatically
+  call 2: level system · cause below_minimum
+    detail: Context tokens (992) below provider minimum (2048)
+    note: prefix below provider caching threshold
+mode      read     written    uncached   input cost   user-caused breaks
+observe   0%       0%         0%         1.00×        0
+safe      0%       0%         0%         1.00×        0
+optimize  0%       0%         0%         1.00×        0
+mode      read     written    uncached   input cost   user-caused breaks
+observe   0%       100%       0%         1.00×        0
+safe      0%       100%       0%         1.00×        0
+optimize  66%      34%        0%         0.44×        0
