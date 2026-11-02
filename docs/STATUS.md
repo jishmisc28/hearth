@@ -11,12 +11,30 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M4 simulator & replay CLI | VERIFIED | 2026-10-19 | C-07, C-08 |
 | M5 memory v0 | VERIFIED | 2026-10-19 | INV-12, memory safety |
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
-| M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 | Release gate (C-01 to C-11) |
+| M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: v0.1.0 is on PyPI. Next proof is more scenarios, then one live bill.
-`hearth-ai` 0.1.0 is published. `hearth scenarios` shows four different offline failures. Live contract nights still start when `GEMINI_API_KEY` is in repository secrets. Spend remains $0.00 until then.
+## Plan: v0.1.0 is on PyPI. Bedrock live calls do not return a cache.
+`hearth-ai` 0.1.0 is published. gpt-oss-120b on Bedrock answers and bills every input token. Hearth can move a clock out of a chat system message. A cache saving on this model is not available to claim.
 
 ## Log
+
+## 2026-11-02 · Live Bedrock check: no cache fields
+Gate commands and output tails:
+- `make check`: `76 files already formatted; mypy --strict src/hearth: Success: no issues found in 41 source files; 65 passed, 3 deselected`
+- Live `openai.gpt-oss-120b-1:0`: stable call 1 and call 2 both `prompt_tokens` 1699, `completion_tokens` 8, no `cached_tokens`. Clock prefix: `prompt_tokens` 1716.
+- `hearth.wrap` observe left `Current time: 2026-11-02T09:00:00` in the system message (102 prompt tokens). optimize moved it onto the user message (106 prompt tokens).
+Numbers: 5,406 input tokens and 72 output tokens across the logged calls · cached tokens reported: 0 · USD unpriced
+What changed (user-visible first):
+- Optimize mode now moves a clock out of an OpenAI-style system message, which is where Bedrock Chat Completions puts instructions.
+- A missing price in `providers.toml` no longer throws away the provider response.
+- `OpenAIChatClient` speaks the Bedrock completions URL with the standard library.
+Learned (for Abhranshu):
+- The URL ending in `/v1/chat/completions` returns `UnknownOperationException`. The URL ending in `/openai/v1/chat/completions` returns a chat completion. The model id that works is `openai.gpt-oss-120b-1:0`, not `gpt-oss-120b`.
+- Two identical long prompts produced the same bill and no cache field. AWS's own caching samples list GPT OSS as not yet supported. Hearth cannot manufacture a saving the provider does not sell.
+GTM-ready: no savings claim for Bedrock gpt-oss. The negative result is the proof.
+Blocked on Abhranshu: nothing for this measurement. A model that actually returns `cached_tokens` is what a savings claim needs.
+
+
 
 ## 2026-11-02 · M7 after v0.1.0: scenarios people can run
 Gate commands and output tails:

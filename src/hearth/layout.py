@@ -93,3 +93,35 @@ def optimize_layout(
     all_changes.extend(offload_changes)
 
     return new_system, new_messages, all_changes
+
+
+def optimize_chat_messages(
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Relocate volatile lines inside an OpenAI-style system message.
+
+    Chat Completions keeps the system text in ``messages``, not a top-level
+    ``system`` field. The non-volatile lines stay in that message. The clock
+    moves onto the latest user message.
+    """
+    system_idx = None
+    for idx, message in enumerate(messages):
+        if (
+            isinstance(message, dict)
+            and message.get("role") == "system"
+            and isinstance(message.get("content"), str)
+        ):
+            system_idx = idx
+            break
+    if system_idx is None:
+        new_messages, changes = offload_large_tool_outputs(list(messages), tools)
+        return new_messages, changes
+
+    system = str(messages[system_idx]["content"])
+    rest = [dict(message) for i, message in enumerate(messages) if i != system_idx]
+    new_system, new_rest, changes = optimize_layout(system, rest, tools)
+    system_message = dict(messages[system_idx])
+    system_message["content"] = new_system
+    head = [dict(message) for message in messages[:system_idx]]
+    return head + [system_message] + new_rest, changes

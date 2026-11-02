@@ -6,6 +6,7 @@ import copy
 import logging
 import time
 from collections.abc import Callable
+from decimal import Decimal
 from typing import Any
 
 from hearth import HearthPrefixBreak
@@ -15,9 +16,9 @@ from hearth.adapters import (
     parse_gemini_usage,
     parse_openai_usage,
 )
-from hearth.cost import compute_call_cost
+from hearth.cost import CallCost, compute_call_cost
 from hearth.guard import PrefixGuard
-from hearth.layout import optimize_layout
+from hearth.layout import optimize_chat_messages, optimize_layout
 from hearth.ledger import Ledger
 from hearth.otel import record_span
 from hearth.planner import get_ttl_optimizer, plan_breakpoints
@@ -106,16 +107,33 @@ class WrappedMethod:
 
         # In optimize mode: optimize layout (relocate volatile system prompts, offload large tool outputs)
         if self.mode == "optimize":
-            opt_system, opt_messages, layout_changes = optimize_layout(
-                system=mod_kwargs.get("system", ""),
-                messages=mod_kwargs.get("messages", []),
-                tools=mod_kwargs.get("tools"),
-            )
-            if opt_system != mod_kwargs.get("system", ""):
-                mod_kwargs["system"] = opt_system
-            if opt_messages != mod_kwargs.get("messages", []):
-                mod_kwargs["messages"] = opt_messages
-            changes_list.extend(layout_changes)
+            raw_messages = mod_kwargs.get("messages")
+            chat_messages: list[dict[str, Any]] | None = None
+            if isinstance(raw_messages, list) and all(
+                isinstance(item, dict) for item in raw_messages
+            ):
+                typed_messages: list[dict[str, Any]] = list(raw_messages)
+                if any(message.get("role") == "system" for message in typed_messages):
+                    chat_messages = typed_messages
+            if not mod_kwargs.get("system") and chat_messages is not None:
+                opt_messages, layout_changes = optimize_chat_messages(
+                    chat_messages,
+                    tools=mod_kwargs.get("tools"),
+                )
+                if opt_messages != chat_messages:
+                    mod_kwargs["messages"] = opt_messages
+                changes_list.extend(layout_changes)
+            else:
+                opt_system, opt_messages, layout_changes = optimize_layout(
+                    system=mod_kwargs.get("system", ""),
+                    messages=mod_kwargs.get("messages", []),
+                    tools=mod_kwargs.get("tools"),
+                )
+                if opt_system != mod_kwargs.get("system", ""):
+                    mod_kwargs["system"] = opt_system
+                if opt_messages != mod_kwargs.get("messages", []):
+                    mod_kwargs["messages"] = opt_messages
+                changes_list.extend(layout_changes)
 
         # 2. Segment request
         messages = mod_kwargs.get("messages", [])
@@ -212,15 +230,32 @@ class WrappedMethod:
         model_name = str(kwargs.get("model", "unknown"))
         normalized_usage = self._extract_usage(response)
 
-        # Compute cost in USD
-        cost_info = compute_call_cost(
-            provider=self.provider,
-            model=model_name,
-            read_tokens=normalized_usage.read,
-            write_tokens=normalized_usage.write,
-            uncached_tokens=normalized_usage.uncached,
-            output_tokens=normalized_usage.output,
-        )
+        # Compute cost in USD. An unknown model still returns the provider response.
+        try:
+            cost_info = compute_call_cost(
+                provider=self.provider,
+                model=model_name,
+                read_tokens=normalized_usage.read,
+                write_tokens=normalized_usage.write,
+                uncached_tokens=normalized_usage.uncached,
+                output_tokens=normalized_usage.output,
+            )
+        except KeyError as exc:
+            logger.warning("No sourced price for %s/%s", self.provider, model_name)
+            cost_info = CallCost(
+                actual_cost=Decimal("0"),
+                uncached_baseline=Decimal("0"),
+                savings_amount=Decimal("0"),
+                cost_ratio=Decimal("1"),
+            )
+            recorded_breaks.append(
+                {
+                    "cause": "hearth_error",
+                    "user_caused": False,
+                    "level": "system",
+                    "details": f"No sourced price in providers.toml: {exc}",
+                }
+            )
 
         # Update SQLite summary ledger (INV-09: no content)
         self.ledger.record_call(

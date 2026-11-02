@@ -6,12 +6,20 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 
 - **Approved M0 + Contract Test Budget:** $25.00
 - **Approved GTM Budget:** $30.00
-- **Total Spent to Date:** $0.00
+- **Total Spent to Date:** tokens recorded below; USD not computed (no sourced price for gpt-oss-120b)
 
 ## Spend Log
 
 | Date | Run ID | Target / Provider | Model | Input Tokens | Cached Tokens | Output Tokens | Cost (USD) | Cumulative (USD) |
 |---|---|---|---|---|---|---|---|---|
+| 2026-11-02 | bedrock-gptoss-smoke | Amazon Bedrock Chat Completions | openai.gpt-oss-120b-1:0 | 84 | 0 (field absent) | 32 | unpriced | unpriced |
+| 2026-11-02 | bedrock-gptoss-stable-1 | Amazon Bedrock Chat Completions | openai.gpt-oss-120b-1:0 | 1699 | 0 (field absent) | 8 | unpriced | unpriced |
+| 2026-11-02 | bedrock-gptoss-stable-2 | Amazon Bedrock Chat Completions | openai.gpt-oss-120b-1:0 | 1699 | 0 (field absent) | 8 | unpriced | unpriced |
+| 2026-11-02 | bedrock-gptoss-clock | Amazon Bedrock Chat Completions | openai.gpt-oss-120b-1:0 | 1716 | 0 (field absent) | 8 | unpriced | unpriced |
+| 2026-11-02 | bedrock-hearth-observe | Amazon Bedrock via hearth.wrap observe | openai.gpt-oss-120b-1:0 | 102 | 0 (field absent) | 8 | unpriced | unpriced |
+| 2026-11-02 | bedrock-hearth-optimize | Amazon Bedrock via hearth.wrap optimize | openai.gpt-oss-120b-1:0 | 106 | 0 (field absent) | 8 | unpriced | unpriced |
+
+The second identical 1,699-token prompt returned the same usage as the first. No `cached_tokens` field was present. A clock prefixed to that prompt changed the billed input from 1,699 to 1,716. Dollars are not filled in because `providers.toml` has no sourced price for this model. `DeepSeek-V3.1` (`deepseek.v3-v1:0` and `deepseek.v3.1`) was rejected as an invalid model id on this key.
 
 ## Pre-Registered M0 Tasks & Models
 

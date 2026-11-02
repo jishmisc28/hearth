@@ -37,6 +37,8 @@ hearth scenarios
 hearth scenarios --html hearth-scenarios.html
 ```
 
+On Amazon Bedrock the Chat Completions URL that answers is `https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions`, and the gpt-oss-120b id is `openai.gpt-oss-120b-1:0`. On 2 Nov 2026 two identical 1,699-token prompts came back with no cached-token field. Optimize mode still moves a clock out of the system message. It does not invent a cache discount the provider did not report.
+
 Optional provider and integration extras:
 ```bash
 pip install "hearth-ai[anthropic,openai,gemini,langchain,pydantic-ai,openai-agents,otel]"
