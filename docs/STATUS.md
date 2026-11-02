@@ -11,12 +11,28 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M4 simulator & replay CLI | VERIFIED | 2026-10-19 | C-07, C-08 |
 | M5 memory v0 | VERIFIED | 2026-10-19 | INV-12, memory safety |
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
-| M7 hardening & v0.1 | IN PROGRESS | 2026-10-23 | Release gate (C-01 to C-11) |
+| M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 | Release gate (C-01 to C-11) |
 
-## Plan: v0.1.0 tag is cut on the offline gate (D-14, D-15)
-Git tag `v0.1.0` follows a green `make check` on GitHub. PyPI upload still needs trusted publishing connected for `jishmisc28/hearth`. Live contract nights start when `GEMINI_API_KEY` is in repository secrets. Spend remains $0.00 until then.
+## Plan: v0.1.0 is on PyPI. Next proof is more scenarios, then one live bill.
+`hearth-ai` 0.1.0 is published. `hearth scenarios` shows four different offline failures. Live contract nights still start when `GEMINI_API_KEY` is in repository secrets. Spend remains $0.00 until then.
 
 ## Log
+
+## 2026-11-02 · M7 after v0.1.0: scenarios people can run
+Gate commands and output tails:
+- `make check`: `74 files already formatted; mypy --strict src/hearth: Success: no issues found in 40 source files; 61 passed, 3 deselected`
+- `hearth scenarios`: clock optimize read 66.4% and cost 0.42× against observe 0.0% and 1.00×; shuffled tools safe read 49.9% and 0 app-caused breaks against observe 0.0% and 1 break; short prompt 0 app-caused breaks; rewritten history 1 app-caused break in every mode
+Numbers: scenario tests passed · simulator, not a bill · API spend $0.00
+What changed (user-visible first):
+- `hearth scenarios` replays four cache failures with no API key and writes `hearth-scenarios.html`.
+- Replay now counts the system prompt and the tools when it decides whether a call is too short to cache. A long system prompt with a short question is no longer treated as below the minimum.
+Learned (for Abhranshu):
+- `src/hearth/scenarios.py`: moving a clock out of the system prompt drops simulated input cost from 1.00× to 0.42×, and the guard still records breaks. The clock was written onto a turn that the next raw history does not contain, so the bytes of that earlier turn do not match.
+- Safe mode is the one that removes the tool-order break. Optimize does not. Each mode fixes a different mistake.
+GTM-ready: no new live claim. The page is labeled simulator.
+Blocked on Abhranshu: repository secret `GEMINI_API_KEY`, so one real Gemini session can be logged in `docs/BENCH.md`. PyPI trusted publishing is done.
+
+
 
 ## 2026-10-23 · M7 hardening & v0.1: IN PROGRESS
 Gate commands and output tails:

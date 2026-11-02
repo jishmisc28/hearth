@@ -25,6 +25,7 @@ Append only. Format: ID · date · decision · why · reversal trigger. OPEN row
 | D-09-R2 | 2026-10-19 | Resolves D-09: Repository confirmed public on GitHub (`jishmisc28/hearth`); tag `0.1.0a1` created and pushed | Abhranshu approved at M1 gate ("yes to 1") | — |
 | D-14 | 2026-10-23 | v0.1.0 is not held for three human install trials. The Gemini evaluation the same night (LIBRARY-OK, offline checks 10/10, recorded in `hearth-v0.1-proof.html`) is the acceptance check. | Founder instruction: agents verify the library. Do not block the release on another person. | A later human trial contradicts that result |
 | D-15 | 2026-10-23 | Cut git tag `v0.1.0` on the offline gate. The five-night live contract streak starts when `GEMINI_API_KEY` is in GitHub secrets. No live saving is claimed while `docs/BENCH.md` spend is $0.00. | No provider key is available to the agents. Founder said proceed rather than wait. | A live run shows the offline behavior does not hold |
+| D-16 | 2026-11-02 | Add `hearth scenarios` and `hearth-scenarios.html`. Four offline cases (clock in the system prompt, shuffled tools, too short to cache, rewritten history) with distinct results. | Founder asked for more scenarios and visible proof without waiting on another person. A new CLI command is a public interface. | The command is unused, or a live suite replaces it |
 
 ## Ideas (not scheduled)
 

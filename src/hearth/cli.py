@@ -235,6 +235,24 @@ def cmd_bench(args: argparse.Namespace) -> int:
     return 0 if summary.get("gate_verified", False) else 1
 
 
+def cmd_scenarios(args: argparse.Namespace) -> int:
+    """Print the four offline scenarios. Optionally write the HTML page."""
+    from hearth.scenarios import render_html, run_scenarios
+
+    scenarios = run_scenarios()
+    for scenario in scenarios:
+        print(scenario.title)
+        for row in scenario.rows:
+            print(
+                f"  {row.mode:8}  read {row.read_pct:5.1f}%  "
+                f"cost {row.cost_ratio:.2f}x  app-caused breaks {row.user_caused_breaks}"
+            )
+    if args.html:
+        Path(args.html).write_text(render_html(scenarios), encoding="utf-8")
+        print(f"wrote {args.html}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="hearth", description="Hearth context engine CLI")
     subparsers = parser.add_subparsers(dest="command")
@@ -268,6 +286,17 @@ def main(argv: list[str] | None = None) -> int:
     p_guard.add_argument("--baseline", default=None, help="Directory or file with baseline traces")
     p_guard.add_argument("--run", required=True, help="Command to run agent test suite")
 
+    # scenarios
+    p_scenarios = subparsers.add_parser(
+        "scenarios",
+        help="Replay four offline cache scenarios (no API key, no provider bill)",
+    )
+    p_scenarios.add_argument(
+        "--html",
+        default=None,
+        help="Write the scenario page to this path",
+    )
+
     # bench
     p_bench = subparsers.add_parser("bench", help="Run benchmark suite")
     p_bench.add_argument(
@@ -284,6 +313,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_replay(args)
     elif args.command == "guard":
         return cmd_guard(args)
+    elif args.command == "scenarios":
+        return cmd_scenarios(args)
     elif args.command == "bench":
         return cmd_bench(args)
     else:

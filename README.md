@@ -30,6 +30,13 @@ Hearth wraps your existing LLM client in-process, measures cache behavior, resto
 pip install hearth-ai
 ```
 
+See four cache failures without an API key. The prices are the simulator, not a provider bill.
+
+```bash
+hearth scenarios
+hearth scenarios --html hearth-scenarios.html
+```
+
 Optional provider and integration extras:
 ```bash
 pip install "hearth-ai[anthropic,openai,gemini,langchain,pydantic-ai,openai-agents,otel]"

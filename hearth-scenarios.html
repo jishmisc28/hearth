@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hearth scenarios</title>
+<style>
+  body { margin: 0; background: #f7f4ee; color: #1c1917;
+    font-family: Palatino, Georgia, serif; font-size: 18px; line-height: 1.5; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 72px; }
+  h1 { font-weight: 500; font-size: 36px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  h2 { font-weight: 500; font-size: 24px; margin: 36px 0 8px; }
+  .kicker { font-family: "Avenir Next", "Segoe UI", sans-serif; font-size: 12px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #9a3412; }
+  .note { background: #f8f1dc; border-left: 3px solid #854d0e; padding: 12px 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th, td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid #e4ddd2; }
+  th { font-family: "Avenir Next", "Segoe UI", sans-serif; font-size: 12px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: #57534e; }
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">Hearth · four scenarios · simulator</p>
+  <h1>The same library, four different failures</h1>
+  <p class="note">These prices are the offline simulator for Gemini 2.5 Flash.
+  They are not a provider bill. Regenerate this page with
+  <code>hearth scenarios --html hearth-scenarios.html</code>.</p>
+  <section><h2>A clock at the top of the instructions</h2><p>The system text is the same every turn except the time. Observe and safe send that changing line first, so nothing is read from cache. Optimize moves the time onto the latest user message. The stable instructions are then read from cache and the input cost falls. The guard still records breaks, because the clock written onto an earlier turn is not in the history the next call sends.</p><table><thead><tr><th>Mode</th><th>Read share</th><th>Input cost vs no cache</th><th>Breaks blamed on the app</th></tr></thead><tbody><tr><td>observe</td><td>0.0%</td><td>1.00×</td><td>2</td></tr><tr><td>safe</td><td>0.0%</td><td>1.00×</td><td>2</td></tr><tr><td>optimize</td><td>66.4%</td><td>0.42×</td><td>2</td></tr></tbody></table></section><section><h2>The same tools, in a new order</h2><p>The second call sends the same three tools shuffled. Safe puts them back in the first-seen order before the simulator prices the call.</p><table><thead><tr><th>Mode</th><th>Read share</th><th>Input cost vs no cache</th><th>Breaks blamed on the app</th></tr></thead><tbody><tr><td>observe</td><td>0.0%</td><td>1.00×</td><td>1</td></tr><tr><td>safe</td><td>49.9%</td><td>0.56×</td><td>0</td></tr><tr><td>optimize</td><td>0.0%</td><td>1.00×</td><td>1</td></tr></tbody></table></section><section><h2>Too short to cache</h2><p>The prompt is one short question. A miss here is the provider minimum, and it is not counted as the application&#x27;s fault.</p><table><thead><tr><th>Mode</th><th>Read share</th><th>Input cost vs no cache</th><th>Breaks blamed on the app</th></tr></thead><tbody><tr><td>observe</td><td>0.0%</td><td>1.00×</td><td>0</td></tr><tr><td>safe</td><td>0.0%</td><td>1.00×</td><td>0</td></tr><tr><td>optimize</td><td>0.0%</td><td>1.00×</td><td>0</td></tr></tbody></table></section><section><h2>An earlier message was edited</h2><p>The first user message changes on the next call. Hearth names that break. It does not quietly rewrite history to hide it.</p><table><thead><tr><th>Mode</th><th>Read share</th><th>Input cost vs no cache</th><th>Breaks blamed on the app</th></tr></thead><tbody><tr><td>observe</td><td>49.9%</td><td>0.57×</td><td>1</td></tr><tr><td>safe</td><td>49.9%</td><td>0.57×</td><td>1</td></tr><tr><td>optimize</td><td>49.9%</td><td>0.57×</td><td>1</td></tr></tbody></table></section>
+</main>
+</body>
+</html>
