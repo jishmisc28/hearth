@@ -13,8 +13,8 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: v0.1.0 is on PyPI. Bedrock live calls do not return a cache.
-`hearth-ai` 0.1.0 is published. gpt-oss-120b on Bedrock answers and bills every input token. Hearth can move a clock out of a chat system message. A cache saving on this model is not available to claim.
+## Plan: v0.1.1 records the Bedrock result. No cache saving is claimed.
+`hearth-ai` 0.1.0 is on PyPI. 0.1.1 moves a clock out of a chat system message and keeps the provider response when a model has no sourced price. gpt-oss-120b on Bedrock bills every input token.
 
 ## Log
 
