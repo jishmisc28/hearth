@@ -13,10 +13,26 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: v0.1.1 records the Bedrock result. Optimize now repeats a clock it already sent.
-`hearth-ai` 0.1.1 is on PyPI. gpt-oss-120b bills every input token. Optimize no longer blames the app for a clock it moved on an earlier turn. A provider cache read is still not in that model's usage.
+## Plan: 0.2.0 counts a Nova Micro cache read. Dollars are still unpriced.
+gpt-oss-120b does not report cache tokens. `amazon.nova-micro-v1:0` on the Converse API does. A wrapped observe call read 3,601 of 3,607 input tokens on the second request. There is no sourced price, so that is not yet a dollar saving.
 
 ## Log
+
+## 2026-11-02 · Nova Micro cache read, counted by Hearth
+Gate commands and output tails:
+- Live `hearth.wrap` observe, `amazon.nova-micro-v1:0`: call 1 read 0, write 3601, uncached 6, output 2. Call 2 read 3601, write 0, uncached 6, output 2.
+- Earlier direct Converse pair, same shape: write 2401, then read 2401, uncached tail 6 both times.
+Numbers: 3,601 cached input tokens on the wrapped second call · USD unpriced · `make check`: `79 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 72 passed, 3 deselected`
+What changed (user-visible first):
+- `BedrockConverse` speaks the Converse URL with the standard library. The bearer key is not written to the ledger.
+- Converse usage is reconciled as cache read + cache write + `inputTokens`. The raw `inputTokens` value of 6 is the tail, not the prompt.
+Learned (for Abhranshu):
+- The OpenAI-compatible URL returned HTTP 404 for `amazon.nova-micro-v1:0`: that model does not support that API. `POST /model/amazon.nova-micro-v1:0/converse` returned the cache fields.
+- A cache read and a lower bill are different facts. 3,601 of 3,607 input tokens were a read. What that costs waits on a sourced price.
+GTM-ready: token counts in `docs/BENCH.md`. No dollar claim and no percentage-saved claim.
+Blocked on Abhranshu: nothing. A sourced Nova price would turn the token count into dollars.
+
+
 
 ## 2026-11-02 · Optimize keeps the clock it already sent
 Gate commands and output tails:

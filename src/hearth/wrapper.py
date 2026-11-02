@@ -13,6 +13,7 @@ from hearth import HearthPrefixBreak
 from hearth.adapters import (
     NormalizedUsage,
     parse_anthropic_usage,
+    parse_bedrock_converse_usage,
     parse_gemini_usage,
     parse_openai_usage,
 )
@@ -361,6 +362,10 @@ class WrappedMethod:
         """Normalize usage across providers into read, write, uncached, output (INV-06)."""
         if hasattr(response, "usage") and response.usage is not None:
             raw_u = response.usage
+            if self.provider == "bedrock" or (
+                isinstance(raw_u, dict) and "cacheReadInputTokens" in raw_u
+            ):
+                return parse_bedrock_converse_usage(raw_u)
             if self.provider == "anthropic" or (
                 isinstance(raw_u, dict) and "cache_read_input_tokens" in raw_u
             ):
@@ -425,6 +430,9 @@ class WrappedClientProxy:
                 if "anthropic" in target_class_name or "messages" in target_class_name:
                     provider = "anthropic"
                     api = "messages"
+                elif "bedrock" in target_class_name:
+                    provider = "bedrock"
+                    api = "converse"
                 elif "openai" in target_class_name or "chat" in target_class_name:
                     provider = "openai"
                     api = "chat"
