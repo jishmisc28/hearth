@@ -143,11 +143,14 @@ def run_scenarios() -> tuple[Scenario, ...]:
             title="A clock at the top of the instructions",
             story=(
                 "The system text is the same every turn except the time. "
-                "Observe and safe send that changing line first, so nothing is read from cache. "
-                "Optimize moves the time onto the latest user message. "
-                "The stable instructions are then read from cache and the input cost falls. "
-                "The guard still records breaks, because the clock written onto an earlier turn "
-                "is not in the history the next call sends."
+                "Observe and safe send that changing line first, so nothing is read from cache "
+                "and the guard blames the app. "
+                "Optimize takes the time out of the instructions. "
+                "On the next turn it writes the same time again onto the message it already sent, "
+                "and puts the new time only on the new turn. "
+                "The guard records no app-caused break. "
+                "The input cost falls because the stable instructions are read from cache. "
+                "The clock is a few tokens, so once those instructions are stable the read share barely moves."
             ),
             rows=_rows(clock_in_system()),
         ),
@@ -228,7 +231,7 @@ def render_html(scenarios: tuple[Scenario, ...]) -> str:
 <body>
 <main>
   <p class="kicker">Hearth · four scenarios · simulator</p>
-  <h1>The same library, four different failures</h1>
+  <h1>The same library, four different outcomes</h1>
   <p class="note">These prices are the offline simulator for Gemini 2.5 Flash.
   They are not a provider bill. Regenerate this page with
   <code>hearth scenarios --html hearth-scenarios.html</code>.</p>

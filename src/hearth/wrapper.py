@@ -18,7 +18,7 @@ from hearth.adapters import (
 )
 from hearth.cost import CallCost, compute_call_cost
 from hearth.guard import PrefixGuard
-from hearth.layout import optimize_chat_messages, optimize_layout
+from hearth.layout import LayoutMemory, optimize_chat_messages, optimize_layout
 from hearth.ledger import Ledger
 from hearth.otel import record_span
 from hearth.planner import get_ttl_optimizer, plan_breakpoints
@@ -52,6 +52,7 @@ class WrappedMethod:
         self.recorder = recorder or get_trace_recorder()
         self.ledger = ledger or Ledger()
         self.guard = PrefixGuard(strict=strict)
+        self._layout_memory: dict[str, LayoutMemory] = {}
         self._call_counter = 0
         self._first_seen_tools_order: dict[str, list[dict[str, Any]]] = {}
 
@@ -107,6 +108,7 @@ class WrappedMethod:
 
         # In optimize mode: optimize layout (relocate volatile system prompts, offload large tool outputs)
         if self.mode == "optimize":
+            layout_memory = self._layout_memory.setdefault(session_id, LayoutMemory())
             raw_messages = mod_kwargs.get("messages")
             chat_messages: list[dict[str, Any]] | None = None
             if isinstance(raw_messages, list) and all(
@@ -119,6 +121,7 @@ class WrappedMethod:
                 opt_messages, layout_changes = optimize_chat_messages(
                     chat_messages,
                     tools=mod_kwargs.get("tools"),
+                    memory=layout_memory,
                 )
                 if opt_messages != chat_messages:
                     mod_kwargs["messages"] = opt_messages
@@ -128,6 +131,7 @@ class WrappedMethod:
                     system=mod_kwargs.get("system", ""),
                     messages=mod_kwargs.get("messages", []),
                     tools=mod_kwargs.get("tools"),
+                    memory=layout_memory,
                 )
                 if opt_system != mod_kwargs.get("system", ""):
                     mod_kwargs["system"] = opt_system
@@ -254,6 +258,27 @@ class WrappedMethod:
                     "user_caused": False,
                     "level": "system",
                     "details": f"No sourced price in providers.toml: {exc}",
+                }
+            )
+
+        # The guard runs before the provider answers. A real miss is visible
+        # only in the usage that comes back: the prefix held, and the read is 0.
+        prefix_was_stable = not any(
+            item.get("cause") not in ("hearth_error",) for item in recorded_breaks
+        )
+        if (
+            self.mode in ("safe", "optimize")
+            and call_idx > 1
+            and prefix_was_stable
+            and normalized_usage.read == 0
+            and normalized_usage.total_input >= self.guard.min_prefix_tokens
+        ):
+            recorded_breaks.append(
+                {
+                    "cause": "provider_miss",
+                    "user_caused": False,
+                    "level": "system",
+                    "details": "Identical prefix had 0 cached tokens reported by the provider",
                 }
             )
 

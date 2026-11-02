@@ -13,10 +13,25 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: v0.1.1 records the Bedrock result. No cache saving is claimed.
-`hearth-ai` 0.1.0 is on PyPI. 0.1.1 moves a clock out of a chat system message and keeps the provider response when a model has no sourced price. gpt-oss-120b on Bedrock bills every input token.
+## Plan: v0.1.1 records the Bedrock result. Optimize now repeats a clock it already sent.
+`hearth-ai` 0.1.1 is on PyPI. gpt-oss-120b bills every input token. Optimize no longer blames the app for a clock it moved on an earlier turn. A provider cache read is still not in that model's usage.
 
 ## Log
+
+## 2026-11-02 · Optimize keeps the clock it already sent
+Gate commands and output tails:
+- `make check`: `76 files already formatted; mypy --strict src/hearth: Success: no issues found in 41 source files; 69 passed, 3 deselected`
+- `hearth scenarios` clock row: observe read 0.0% cost 1.00× and 2 app-caused breaks; optimize read 66.5% cost 0.42× and 0 app-caused breaks. The other three scenarios are unchanged.
+Numbers: 69 passed · simulator read share 66.5% on the clock case · no new API spend in this change
+What changed (user-visible first):
+- On the next turn, optimize writes the same clock back onto the message it already sent, and puts the new clock only on the new user message.
+- A rewritten earlier message is left as the app sent it. The old clock is not pasted onto it.
+- A matching prefix is not called a provider miss until a read count of zero comes back from the provider. A long stable prompt with a zero read is recorded as `provider_miss`, and it is not blamed on the app.
+Learned (for Abhranshu):
+- `src/hearth/layout.py`: the cache key is the bytes of the previous request. Moving a clock onto "Turn 1" and then sending "Turn 1" without that clock on the next call is a different prefix. The read share only moves from 66.4% to 66.5% because the clock is a few tokens next to a long stable instruction. The break count is the real change: 2 down to 0.
+- `src/hearth/guard.py`: `provider_miss` used to fire whenever the prefix matched and the read count was still the default zero, which is the state before the provider answers.
+GTM-ready: no savings claim. The scenario page is still the simulator.
+Blocked on Abhranshu: nothing for this fix.
 
 ## 2026-11-02 · Live Bedrock check: no cache fields
 Gate commands and output tails:

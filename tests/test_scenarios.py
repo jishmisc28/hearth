@@ -13,6 +13,8 @@ def test_clock_optimize_reads_more_than_observe() -> None:
     rows = {row.mode: row for row in _by_slug()["clock"].rows}
     assert rows["optimize"].read_pct > rows["observe"].read_pct
     assert rows["optimize"].cost_ratio < rows["observe"].cost_ratio
+    assert rows["optimize"].user_caused_breaks == 0
+    assert rows["observe"].user_caused_breaks > 0
 
 
 def test_shuffled_tools_are_blamed_in_observe_and_not_after_safe() -> None:

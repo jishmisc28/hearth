@@ -63,7 +63,7 @@ def classify_break_cause(
     min_prefix_tokens: int,
     time_gap_seconds: float,
     ttl_seconds: float,
-    provider_read_tokens: int = 0,
+    provider_read_tokens: int | None = None,
 ) -> BreakEvent | None:
     """Classifies divergence between calls strictly in precedence order (BUILD_HANDBOOK §5.2)."""
     # 1. below_minimum
@@ -89,9 +89,11 @@ def classify_break_cause(
         )
 
     # 4. provider_miss
-    # If prefix was identical and within TTL, but provider reported 0 read
+    # Only when the caller supplies the provider's read count. A missing count
+    # means the call has not been answered yet, which is not a miss.
     if (
-        prev_params == curr_params
+        provider_read_tokens is not None
+        and prev_params == curr_params
         and prev_tools == curr_tools
         and prev_system == curr_system
         and prev_messages == curr_messages[: len(prev_messages)]
@@ -201,7 +203,7 @@ class PrefixGuard:
         curr_messages: list[dict[str, Any]],
         total_tokens: int,
         ts: float,
-        provider_read_tokens: int = 0,
+        provider_read_tokens: int | None = None,
     ) -> BreakEvent | None:
         """Evaluate upcoming call against previous call state."""
         time_gap = (ts - self.last_ts) if self.last_ts is not None else 0.0

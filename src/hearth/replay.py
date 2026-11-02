@@ -10,7 +10,7 @@ from typing import Any
 
 from hearth.cost import compute_call_cost
 from hearth.guard import PrefixGuard
-from hearth.layout import optimize_layout
+from hearth.layout import LayoutMemory, optimize_layout
 from hearth.sim.cache_sim import CacheSimulator
 from hearth.sim.tokens import count_text_tokens
 
@@ -50,6 +50,7 @@ def replay_trace_events(
     user_caused_breaks = 0
 
     first_seen_tools: list[str] = []
+    layout_memory = LayoutMemory()
 
     for call_idx, call in enumerate(calls, start=1):
         req = call.get("request", {})
@@ -86,6 +87,7 @@ def replay_trace_events(
                 system=system,
                 messages=messages,
                 tools=tools,
+                memory=layout_memory,
             )
 
         # PrefixGuard evaluation. Count the system and tools, not only the latest message.
