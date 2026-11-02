@@ -12,6 +12,7 @@ from hearth.cost import compute_call_cost
 from hearth.guard import PrefixGuard
 from hearth.layout import optimize_layout
 from hearth.sim.cache_sim import CacheSimulator
+from hearth.sim.tokens import count_text_tokens
 
 
 @dataclass
@@ -87,13 +88,19 @@ def replay_trace_events(
                 tools=tools,
             )
 
-        # PrefixGuard evaluation
+        # PrefixGuard evaluation. Count the system and tools, not only the latest message.
+        token_total = count_text_tokens(system, model=model)
+        token_total += sum(
+            count_text_tokens(str(m.get("content", "")), model=model) for m in messages
+        )
+        if tools:
+            token_total += count_text_tokens(str(tools), model=model)
         ev = guard.evaluate_call(
             curr_params={"model": model},
             curr_tools=tools or [],
             curr_system=system,
             curr_messages=messages,
-            total_tokens=sum(len(str(m.get("content", ""))) // 4 for m in messages),
+            total_tokens=token_total,
             ts=ts,
         )
         if ev is not None and ev.user_caused:
