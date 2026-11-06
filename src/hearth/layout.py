@@ -40,6 +40,12 @@ def _with_suffix(message: dict[str, Any], suffix: str) -> dict[str, Any]:
     content = updated.get("content", "")
     if isinstance(content, str):
         updated["content"] = f"{content}{suffix}"
+    elif isinstance(content, list):
+        blocks: list[Any] = []
+        for block in content:
+            blocks.append(dict(block) if isinstance(block, dict) else block)
+        blocks.append({"text": suffix.lstrip("\n")})
+        updated["content"] = blocks
     return updated
 
 
@@ -122,7 +128,7 @@ def relocate_volatile_in_system(
             )
         else:
             content = original.get("content", "")
-            if isinstance(content, str):
+            if isinstance(content, (str, list)):
                 optimized_messages[target_idx] = _with_suffix(original, suffix)
                 if memory is not None:
                     memory.remember(target_idx, original, suffix)
@@ -169,6 +175,51 @@ def optimize_layout(
     all_changes.extend(offload_changes)
 
     return new_system, new_messages, all_changes
+
+
+def optimize_converse_system(
+    system: list[Any],
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+    memory: LayoutMemory | None = None,
+) -> tuple[list[Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Move a clock out of Converse system text and leave cache checkpoints alone.
+
+    A Converse system is a list of blocks. Text blocks hold the instructions.
+    A ``cachePoint`` block is copied through unchanged, because that is the
+    marker the provider uses to reuse the prefix.
+    """
+    text_parts = [
+        str(block["text"])
+        for block in system
+        if isinstance(block, dict) and isinstance(block.get("text"), str)
+    ]
+    joined = "\n".join(text_parts)
+    messages_in = [dict(message) for message in messages]
+    new_text, new_messages, changes = relocate_volatile_in_system(
+        joined, messages_in, memory=memory
+    )
+    new_messages, offload_changes = offload_large_tool_outputs(new_messages, tools)
+    changes = [*changes, *offload_changes]
+    if new_text == joined and new_messages == messages_in and not changes:
+        return system, messages, []
+
+    rebuilt: list[Any] = []
+    placed = False
+    for block in system:
+        if isinstance(block, dict) and isinstance(block.get("text"), str):
+            if not placed:
+                updated = dict(block)
+                updated["text"] = new_text
+                rebuilt.append(updated)
+                placed = True
+        elif isinstance(block, dict):
+            rebuilt.append(dict(block))
+        else:
+            rebuilt.append(block)
+    if not placed:
+        rebuilt.insert(0, {"text": new_text})
+    return rebuilt, new_messages, changes
 
 
 def optimize_chat_messages(

@@ -13,10 +13,27 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: 0.2.0 counts a Nova Micro cache read. Dollars are still unpriced.
-gpt-oss-120b does not report cache tokens. `amazon.nova-micro-v1:0` on the Converse API does. A wrapped observe call read 3,601 of 3,607 input tokens on the second request. There is no sourced price, so that is not yet a dollar saving.
+## Plan: 0.2.0 counts a Nova Micro cache read. The stronger mode can now keep a Converse checkpoint.
+Dollars are still unpriced. The nightly contract job stays red until a Gemini key is in GitHub. No new live call was made on 6 November.
 
 ## Log
+
+## 2026-11-06 · Converse checkpoints and finished streams, still offline
+Gate commands and output tails:
+- `make check`: `80 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 75 passed, 3 deselected`
+Numbers: 75 passed · no API spend
+What changed (user-visible first):
+- Optimize mode can move a clock out of a Converse system list without dropping the cache checkpoint block.
+- On the next turn that same clock is written again onto the message that was already sent.
+- A streamed reply and an awaited reply are recorded when they finish. The token counts come from the last chunk, or from the awaited reply.
+Learned (for Abhranshu):
+- `src/hearth/layout.py`: a `cachePoint` block is not text. Folding it into the clock move would change the marker Nova uses to reuse the prefix.
+- `src/hearth/wrapper.py`: counting a stream at the moment `create` returns sees no usage yet. The bill arrives with the last chunk.
+GTM-ready: no new live claim. The 3,601-token Nova read is unchanged.
+Blocked on Abhranshu: the Gemini key for the nightly job, and a sourced Nova price. The Bedrock key is not in this shell, so the live clock check on Nova is waiting.
+
+
+gpt-oss-120b does not report cache tokens. `amazon.nova-micro-v1:0` on the Converse API does. A wrapped observe call read 3,601 of 3,607 input tokens on the second request. There is no sourced price, so that is not yet a dollar saving.
 
 ## 2026-11-02 · Nova Micro cache read, counted by Hearth
 Gate commands and output tails:

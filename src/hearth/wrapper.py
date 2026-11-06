@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from decimal import Decimal
 from typing import Any
 
@@ -19,7 +20,12 @@ from hearth.adapters import (
 )
 from hearth.cost import CallCost, compute_call_cost
 from hearth.guard import PrefixGuard
-from hearth.layout import LayoutMemory, optimize_chat_messages, optimize_layout
+from hearth.layout import (
+    LayoutMemory,
+    optimize_chat_messages,
+    optimize_converse_system,
+    optimize_layout,
+)
 from hearth.ledger import Ledger
 from hearth.otel import record_span
 from hearth.planner import get_ttl_optimizer, plan_breakpoints
@@ -118,7 +124,22 @@ class WrappedMethod:
                 typed_messages: list[dict[str, Any]] = list(raw_messages)
                 if any(message.get("role") == "system" for message in typed_messages):
                     chat_messages = typed_messages
-            if not mod_kwargs.get("system") and chat_messages is not None:
+            system_value = mod_kwargs.get("system", "")
+            if isinstance(system_value, list):
+                raw_for_converse = mod_kwargs.get("messages", [])
+                converse_messages = raw_for_converse if isinstance(raw_for_converse, list) else []
+                opt_system, opt_messages, layout_changes = optimize_converse_system(
+                    system_value,
+                    converse_messages,
+                    tools=mod_kwargs.get("tools"),
+                    memory=layout_memory,
+                )
+                if opt_system != system_value:
+                    mod_kwargs["system"] = opt_system
+                if opt_messages != converse_messages:
+                    mod_kwargs["messages"] = opt_messages
+                changes_list.extend(layout_changes)
+            elif not mod_kwargs.get("system") and chat_messages is not None:
                 opt_messages, layout_changes = optimize_chat_messages(
                     chat_messages,
                     tools=mod_kwargs.get("tools"),
@@ -128,16 +149,17 @@ class WrappedMethod:
                     mod_kwargs["messages"] = opt_messages
                 changes_list.extend(layout_changes)
             else:
-                opt_system, opt_messages, layout_changes = optimize_layout(
-                    system=mod_kwargs.get("system", ""),
+                system_text = system_value if isinstance(system_value, str) else ""
+                layout_system, layout_messages, layout_changes = optimize_layout(
+                    system=system_text,
                     messages=mod_kwargs.get("messages", []),
                     tools=mod_kwargs.get("tools"),
                     memory=layout_memory,
                 )
-                if opt_system != mod_kwargs.get("system", ""):
-                    mod_kwargs["system"] = opt_system
-                if opt_messages != mod_kwargs.get("messages", []):
-                    mod_kwargs["messages"] = opt_messages
+                if layout_system != system_text:
+                    mod_kwargs["system"] = layout_system
+                if layout_messages != mod_kwargs.get("messages", []):
+                    mod_kwargs["messages"] = layout_messages
                 changes_list.extend(layout_changes)
 
         # 2. Segment request
@@ -227,15 +249,86 @@ class WrappedMethod:
                 )
 
         ts_start = time.time()
-        ts_first_token: float | None = None
-
-        response = self._target_fn(*args, **send_kwargs)
-        ts_end = time.time()
-
         model_name = str(kwargs.get("model", "unknown"))
-        normalized_usage = self._extract_usage(response)
+        response = self._target_fn(*args, **send_kwargs)
 
-        # Compute cost in USD. An unknown model still returns the provider response.
+        if inspect.isasyncgen(response):
+            return self._wrap_async_stream(
+                response,
+                args=args,
+                kwargs=kwargs,
+                session_id=session_id,
+                call_idx=call_idx,
+                model_name=model_name,
+                ts_start=ts_start,
+                recorded_breaks=recorded_breaks,
+                recorded_changes=recorded_changes,
+            )
+        if inspect.iscoroutine(response):
+            return self._wrap_coroutine(
+                response,
+                args=args,
+                kwargs=kwargs,
+                session_id=session_id,
+                call_idx=call_idx,
+                model_name=model_name,
+                ts_start=ts_start,
+                recorded_breaks=recorded_breaks,
+                recorded_changes=recorded_changes,
+            )
+        if self._is_sync_stream(response, kwargs.get("stream")):
+            return self._wrap_sync_stream(
+                response,
+                args=args,
+                kwargs=kwargs,
+                session_id=session_id,
+                call_idx=call_idx,
+                model_name=model_name,
+                ts_start=ts_start,
+                recorded_breaks=recorded_breaks,
+                recorded_changes=recorded_changes,
+            )
+
+        self._finalize_call(
+            response,
+            args=args,
+            kwargs=kwargs,
+            session_id=session_id,
+            call_idx=call_idx,
+            model_name=model_name,
+            ts_start=ts_start,
+            ts_end=time.time(),
+            ts_first_token=None,
+            recorded_breaks=recorded_breaks,
+            recorded_changes=recorded_changes,
+        )
+        return response
+
+    def _is_sync_stream(self, response: Any, stream_flag: Any) -> bool:
+        if not stream_flag or isinstance(response, (str, bytes, dict, list)):
+            return False
+        return isinstance(response, Iterator)
+
+    def _finalize_call(
+        self,
+        response: Any,
+        *,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        session_id: str,
+        call_idx: int,
+        model_name: str,
+        ts_start: float,
+        ts_end: float,
+        ts_first_token: float | None,
+        recorded_breaks: list[dict[str, Any]],
+        recorded_changes: list[dict[str, Any]],
+    ) -> None:
+        normalized_usage = (
+            self._extract_usage(response)
+            if response is not None
+            else NormalizedUsage(read=0, write=0, uncached=0, output=0, total_input=0, raw={})
+        )
         try:
             cost_info = compute_call_cost(
                 provider=self.provider,
@@ -262,8 +355,6 @@ class WrappedMethod:
                 }
             )
 
-        # The guard runs before the provider answers. A real miss is visible
-        # only in the usage that comes back: the prefix held, and the read is 0.
         prefix_was_stable = not any(
             item.get("cause") not in ("hearth_error",) for item in recorded_breaks
         )
@@ -283,7 +374,6 @@ class WrappedMethod:
                 }
             )
 
-        # Update SQLite summary ledger (INV-09: no content)
         self.ledger.record_call(
             session_id=session_id,
             call_index=call_idx,
@@ -299,8 +389,6 @@ class WrappedMethod:
             cost_usd=cost_info.actual_cost,
             breaks_count=len(recorded_breaks),
         )
-
-        # Record OpenTelemetry span if available (D-10)
         record_span(
             session_id=session_id,
             call_index=call_idx,
@@ -314,10 +402,8 @@ class WrappedMethod:
             cost_usd=str(cost_info.actual_cost),
             breaks_count=len(recorded_breaks),
         )
-
-        # Record JSONL trace
         body_to_record = None
-        if self.record:
+        if self.record and response is not None:
             body_to_record = {
                 "request": {
                     "args": [str(a) for a in args],
@@ -325,7 +411,6 @@ class WrappedMethod:
                 },
                 "response": self._extract_response_body(response),
             }
-
         self.recorder.record_call(
             session_id=session_id,
             call_index=call_idx,
@@ -356,7 +441,57 @@ class WrappedMethod:
             record_body=self.record,
         )
 
-        return response
+    def _wrap_sync_stream(
+        self,
+        response: Iterator[Any],
+        **finish: Any,
+    ) -> Iterator[Any]:
+        def chunks() -> Iterator[Any]:
+            first_at: float | None = None
+            last: Any = None
+            try:
+                for item in response:
+                    if first_at is None:
+                        first_at = time.time()
+                    last = item
+                    yield item
+            finally:
+                self._finalize_quietly(last, ts_first_token=first_at, **finish)
+
+        return chunks()
+
+    def _wrap_coroutine(self, response: Any, **finish: Any) -> Any:
+        async def awaited() -> Any:
+            inner = await response
+            self._finalize_quietly(inner, ts_first_token=None, ts_end=time.time(), **finish)
+            return inner
+
+        return awaited()
+
+    def _wrap_async_stream(self, response: AsyncIterator[Any], **finish: Any) -> AsyncIterator[Any]:
+        async def chunks() -> AsyncIterator[Any]:
+            first_at: float | None = None
+            last: Any = None
+            try:
+                async for item in response:
+                    if first_at is None:
+                        first_at = time.time()
+                    last = item
+                    yield item
+            finally:
+                self._finalize_quietly(last, ts_first_token=first_at, **finish)
+
+        return chunks()
+
+    def _finalize_quietly(self, response: Any, **finish: Any) -> None:
+        try:
+            self._finalize_call(
+                response,
+                ts_end=finish.pop("ts_end", time.time()),
+                **finish,
+            )
+        except Exception:
+            logger.exception("Hearth could not record a finished call")
 
     def _extract_usage(self, response: Any) -> NormalizedUsage:
         """Normalize usage across providers into read, write, uncached, output (INV-06)."""

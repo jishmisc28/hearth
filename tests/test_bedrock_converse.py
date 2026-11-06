@@ -80,6 +80,43 @@ def test_converse_request_leaves_hearth_fields_out(monkeypatch: pytest.MonkeyPat
     assert "test-key" not in json.dumps(captured["body"])
 
 
+def test_optimize_keeps_the_cache_checkpoint_and_the_old_clock() -> None:
+    from hearth.layout import LayoutMemory, optimize_converse_system
+
+    memory = LayoutMemory()
+    system = [
+        {"text": "Rules.\nCurrent time: 2026-11-02T08:00:00"},
+        {"cachePoint": {"type": "default"}},
+    ]
+    first_system, first_messages, _ = optimize_converse_system(
+        system,
+        [{"role": "user", "content": [{"text": "Turn 1"}]}],
+        memory=memory,
+    )
+    assert first_system[1] == {"cachePoint": {"type": "default"}}
+    assert "2026-11-02T08:00:00" not in first_system[0]["text"]
+    assert "Rules." in first_system[0]["text"]
+    assert "2026-11-02T08:00:00" in first_messages[0]["content"][1]["text"]
+
+    second_system, second_messages, changes = optimize_converse_system(
+        [
+            {"text": "Rules.\nCurrent time: 2026-11-02T08:00:10"},
+            {"cachePoint": {"type": "default"}},
+        ],
+        [
+            {"role": "user", "content": [{"text": "Turn 1"}]},
+            {"role": "assistant", "content": [{"text": "Noted."}]},
+            {"role": "user", "content": [{"text": "Turn 2"}]},
+        ],
+        memory=memory,
+    )
+    assert second_system[1] == {"cachePoint": {"type": "default"}}
+    assert second_messages[0]["content"] == first_messages[0]["content"]
+    assert "2026-11-02T08:00:10" in second_messages[-1]["content"][-1]["text"]
+    assert "2026-11-02T08:00:00" not in second_messages[-1]["content"][-1]["text"]
+    assert any(change.get("kind") == "volatile_retained" for change in changes)
+
+
 def test_wrap_records_a_converse_cache_read(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
