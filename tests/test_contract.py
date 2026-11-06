@@ -34,15 +34,20 @@ def test_contract_gemini_caching_and_break(tmp_path: Path) -> None:
     wrapped = hearth.wrap(client, mode="safe", recorder=recorder)
     session_id = "contract-gemini-live"
 
-    large_context = "This is a contract test knowledge base.\n" * 3000
+    # About 4,000 tokens: over Gemini's 2,048 minimum, and far under the old 30,000.
+    large_context = "This is a contract test knowledge base.\n" * 400
     contents = [
         {"role": "user", "parts": [{"text": f"Context: {large_context}\nQuestion: What is 2+2?"}]}
     ]
+    from google.genai import types
+
+    config = types.GenerateContentConfig(max_output_tokens=32, temperature=0.0)
 
     # Call 1: Baseline cache write/miss
     resp1 = wrapped.models.generate_content(
         model="gemini-2.5-flash",
         contents=contents,
+        config=config,
         session_id=session_id,
     )
     assert resp1 is not None
@@ -51,6 +56,7 @@ def test_contract_gemini_caching_and_break(tmp_path: Path) -> None:
     resp2 = wrapped.models.generate_content(
         model="gemini-2.5-flash",
         contents=contents,
+        config=config,
         session_id=session_id,
     )
     assert resp2 is not None
@@ -67,6 +73,7 @@ def test_contract_gemini_caching_and_break(tmp_path: Path) -> None:
     resp3 = wrapped.models.generate_content(
         model="gemini-2.5-flash",
         contents=broken_contents,
+        config=config,
         session_id=session_id,
     )
     assert resp3 is not None
@@ -103,6 +110,8 @@ def test_contract_openai_caching_and_break(tmp_path: Path) -> None:
     resp1 = wrapped.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
+        max_tokens=32,
+        temperature=0,
         session_id=session_id,
     )
     assert resp1 is not None
@@ -111,6 +120,8 @@ def test_contract_openai_caching_and_break(tmp_path: Path) -> None:
     resp2 = wrapped.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
+        max_tokens=32,
+        temperature=0,
         session_id=session_id,
     )
     assert resp2 is not None
@@ -126,6 +137,8 @@ def test_contract_openai_caching_and_break(tmp_path: Path) -> None:
     resp3 = wrapped.chat.completions.create(
         model="gpt-4o-mini",
         messages=broken_messages,
+        max_tokens=32,
+        temperature=0,
         session_id=session_id,
     )
     assert resp3 is not None
@@ -136,6 +149,63 @@ def test_contract_openai_caching_and_break(tmp_path: Path) -> None:
     breaks = trace[2].get("breaks", [])
     assert len(breaks) > 0, "Guard did not detect deliberate prefix break on call 3"
     assert breaks[0].get("cause") in ("system_changed", "history_rewritten")
+
+
+@pytest.mark.contract
+def test_contract_bedrock_nova_caching_and_break(tmp_path: Path) -> None:
+    """Live Nova Micro check on the Converse API. Reply length is capped at 8 tokens."""
+    api_key = os.environ.get("BEDROCK_API_KEY")
+    if not api_key:
+        pytest.skip("BEDROCK_API_KEY not configured for live contract test")
+
+    from hearth.bedrock_converse import BedrockConverse, converse_endpoint
+
+    # The saved chat-completions URL is a different operation. Nova uses Converse.
+    endpoint = converse_endpoint(os.environ.get("BEDROCK_ENDPOINT"))
+    client = BedrockConverse(endpoint, api_key)
+    recorder = TraceRecorder(trace_dir=tmp_path)
+    wrapped = hearth.wrap(client, mode="safe", recorder=recorder)
+    session_id = "contract-bedrock-nova"
+    # About 1,600 tokens. Nova's cache minimum is 1,024. Output is 8 tokens.
+    text = "The repository rule is stable. " * 180
+    system = [{"text": text}, {"cachePoint": {"type": "default"}}]
+    messages = [{"role": "user", "content": [{"text": "Reply with the single word ok."}]}]
+    limits = {"maxTokens": 8, "temperature": 0}
+
+    first = wrapped.create(
+        model="amazon.nova-micro-v1:0",
+        system=system,
+        messages=messages,
+        inferenceConfig=limits,
+        session_id=session_id,
+    )
+    assert first is not None
+
+    second = wrapped.create(
+        model="amazon.nova-micro-v1:0",
+        system=system,
+        messages=messages,
+        inferenceConfig=limits,
+        session_id=session_id,
+    )
+    usage = second.usage if isinstance(second.usage, dict) else {}
+    read = int(usage.get("cacheReadInputTokens") or 0)
+    assert read > 0, "Second identical Nova call did not report a cache read"
+
+    broken = [{"text": "Changed rule. " + text}, {"cachePoint": {"type": "default"}}]
+    third = wrapped.create(
+        model="amazon.nova-micro-v1:0",
+        system=broken,
+        messages=messages,
+        inferenceConfig=limits,
+        session_id=session_id,
+    )
+    assert third is not None
+    trace = recorder.read_session(session_id)
+    assert len(trace) == 3
+    breaks = trace[2].get("breaks", [])
+    assert len(breaks) > 0, "Guard did not detect the changed Nova system text"
+    assert breaks[0].get("cause") in ("system_changed", "history_rewritten", "volatile_in_prefix")
 
 
 @pytest.mark.contract

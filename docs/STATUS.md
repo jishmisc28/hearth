@@ -13,10 +13,24 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: 0.2.0 counts a Nova Micro cache read. The stronger mode can now keep a Converse checkpoint.
-Dollars are still unpriced. The nightly contract job stays red until a Gemini key is in GitHub. No new live call was made on 6 November.
+## Plan: The nightly job can call Gemini and Nova. One model run per UTC day.
+Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is not used.
 
 ## Log
+
+## 2026-11-06 · Nightly job uses the keys, and will not call the bad Bedrock URL
+Gate commands and output tails:
+- `make check`: `80 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 76 passed, 4 deselected`
+Numbers: no new API spend in this change
+What changed (user-visible first):
+- The contract job reads `GEMINI_API_KEY` and `BEDROCK_API_KEY`. Nova Micro is called on the Converse host. The chat-completions URL stored as `BEDROCK_ENDPOINT` is ignored.
+- Gemini answers are limited to 32 tokens. Nova answers are limited to 8. The Gemini prompt is about 4,000 tokens, not about 30,000.
+- If a run today already reached the model step, the next click stops before any call.
+Learned (for Abhranshu):
+- `.github/workflows/contract.yml`: two runs cannot overlap, and a completed model step on the same UTC day blocks another.
+- `src/hearth/bedrock_converse.py`: `converse_endpoint` turns both `/v1/chat/completions` and `/openai/v1/chat/completions` back into the Converse host, because Nova does not answer on those paths.
+GTM-ready: no new live claim until a night actually goes green.
+Blocked on Abhranshu: nothing for this wiring. The next contract run is the first one that can spend.
 
 ## 2026-11-06 · Converse checkpoints and finished streams, still offline
 Gate commands and output tails:

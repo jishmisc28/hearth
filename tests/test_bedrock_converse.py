@@ -36,6 +36,26 @@ _READ = {
 }
 
 
+def test_bad_chat_completions_url_is_not_used_for_converse() -> None:
+    from hearth.bedrock_converse import converse_endpoint
+
+    assert (
+        converse_endpoint("https://bedrock-runtime.us-east-1.amazonaws.com/v1/chat/completions")
+        == "https://bedrock-runtime.us-east-1.amazonaws.com"
+    )
+    assert (
+        converse_endpoint(
+            "https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1/chat/completions"
+        )
+        == "https://bedrock-runtime.us-east-1.amazonaws.com"
+    )
+    assert converse_endpoint(None) == "https://bedrock-runtime.us-east-1.amazonaws.com"
+    assert (
+        converse_endpoint("https://bedrock-runtime.eu-west-1.amazonaws.com")
+        == "https://bedrock-runtime.eu-west-1.amazonaws.com"
+    )
+
+
 def test_converse_write_then_read_reconciles() -> None:
     first = parse_bedrock_converse_usage(_WRITE)
     second = parse_bedrock_converse_usage(_READ)

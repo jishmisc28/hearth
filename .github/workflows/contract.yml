@@ -1,16 +1,26 @@
 name: contract
 
-# Live Gemini calls. Each green run spends a small part of the $25 budget.
-# The release gate needs five successful nights after GEMINI_API_KEY is set
-# in the repository secrets. A skipped test is not a success.
+# One live run per UTC day. Gemini if that key exists, Nova on Bedrock Converse
+# if that key exists. A chat-completions URL in BEDROCK_ENDPOINT is ignored.
+# Output length is capped in the tests. A second click the same day stops
+# before any model is called.
 on:
   schedule:
     - cron: "0 15 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: hearth-contract
+  cancel-in-progress: false
+
 jobs:
   contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -18,16 +28,32 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: uv pip install -e ".[dev,gemini,openai]"
-      - name: Require the Gemini key
+      - name: Require a provider key
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BEDROCK_API_KEY: ${{ secrets.BEDROCK_API_KEY }}
         run: |
-          if [ -z "$GEMINI_API_KEY" ]; then
-            echo "GEMINI_API_KEY is not set. Add it under repository secrets."
+          if [ -z "$GEMINI_API_KEY" ] && [ -z "$BEDROCK_API_KEY" ]; then
+            echo "Set GEMINI_API_KEY or BEDROCK_API_KEY as a repository secret."
             exit 1
           fi
+      - name: Stop a second live run today
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          today=$(date -u +%Y-%m-%d)
+          ids=$(gh run list --workflow=contract.yml --created "$today" --limit 30 --json databaseId,status --jq '.[] | select(.status=="completed") | .databaseId')
+          for id in $ids; do
+            hit=$(gh run view "$id" --json jobs --jq '.jobs[].steps[]? | select(.name=="make contract" and (.conclusion=="success" or .conclusion=="failure")) | .name')
+            if [ -n "$hit" ]; then
+              echo "Run $id already called a model today ($today UTC). Not starting another."
+              exit 1
+            fi
+          done
       - name: make contract
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BEDROCK_API_KEY: ${{ secrets.BEDROCK_API_KEY }}
+          BEDROCK_ENDPOINT: ${{ secrets.BEDROCK_ENDPOINT }}
         run: make contract

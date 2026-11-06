@@ -13,6 +13,21 @@ from types import SimpleNamespace
 from typing import Any
 
 _BODY_KEYS = {"system", "messages", "inferenceConfig", "toolConfig"}
+_CONVERSE_HOST = "https://bedrock-runtime.us-east-1.amazonaws.com"
+
+
+def converse_endpoint(raw: str | None) -> str:
+    """Host for the Converse API.
+
+    A URL ending in ``/v1/chat/completions`` or ``/openai/v1/chat/completions``
+    is a different operation. Those paths are not used for Nova.
+    """
+    if not raw or not raw.strip():
+        return _CONVERSE_HOST
+    cleaned = raw.strip().rstrip("/")
+    if cleaned.endswith("/v1/chat/completions"):
+        return _CONVERSE_HOST
+    return cleaned
 
 
 class BedrockConverse:
