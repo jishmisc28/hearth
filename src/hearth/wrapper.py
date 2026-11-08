@@ -35,6 +35,9 @@ from hearth.trace import TraceRecorder, get_trace_recorder
 
 logger = logging.getLogger(__name__)
 
+# Arguments Hearth understands and the model API does not.
+_HEARTH_ONLY = frozenset({"session_id"})
+
 
 class WrappedMethod:
     """Intercepts client creation calls to measure, protect, and trace prompt caching."""
@@ -216,6 +219,16 @@ class WrappedMethod:
 
         return mod_kwargs, breaks_list, changes_list
 
+    def _outbound_kwargs(self, send_kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Drop Hearth-only arguments before the provider sees the call.
+
+        ``prompt_cache_key`` is an OpenAI field. Gemini and Converse reject it.
+        """
+        cleaned = {key: value for key, value in send_kwargs.items() if key not in _HEARTH_ONLY}
+        if self.provider != "openai":
+            cleaned.pop("prompt_cache_key", None)
+        return cleaned
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         self._call_counter += 1
         call_idx = self._call_counter
@@ -250,7 +263,7 @@ class WrappedMethod:
 
         ts_start = time.time()
         model_name = str(kwargs.get("model", "unknown"))
-        response = self._target_fn(*args, **send_kwargs)
+        response = self._target_fn(*args, **self._outbound_kwargs(send_kwargs))
 
         if inspect.isasyncgen(response):
             return self._wrap_async_stream(

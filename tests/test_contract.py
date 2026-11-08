@@ -166,8 +166,9 @@ def test_contract_bedrock_nova_caching_and_break(tmp_path: Path) -> None:
     recorder = TraceRecorder(trace_dir=tmp_path)
     wrapped = hearth.wrap(client, mode="safe", recorder=recorder)
     session_id = "contract-bedrock-nova"
-    # About 1,600 tokens. Nova's cache minimum is 1,024. Output is 8 tokens.
-    text = "The repository rule is stable. " * 180
+    # The guard's default minimum is 2,048. At 180 repeats it counted 1,485
+    # and named the break below_minimum before it looked at the changed text.
+    text = "The repository rule is stable. " * 360
     system = [{"text": text}, {"cachePoint": {"type": "default"}}]
     messages = [{"role": "user", "content": [{"text": "Reply with the single word ok."}]}]
     limits = {"maxTokens": 8, "temperature": 0}

@@ -14,9 +14,23 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
 ## Plan: The nightly job can call Gemini and Nova. One model run per UTC day.
-Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is not used.
+Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is not used. `session_id` is not sent to the model.
 
 ## Log
+
+## 2026-11-08 · Nightly calls reached the models, then failed on two checks
+Gate commands and output tails:
+- `make check`: `81 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 78 passed, 4 deselected`
+Numbers: no new API spend in this change. The Nov 7 night already called the models.
+What changed (user-visible first):
+- Gemini was sent `session_id`, which is Hearth's label for a conversation. Gemini rejected the call. That label is now removed before any model sees the request. `prompt_cache_key` is sent only to OpenAI.
+- Nova's second call did read the cache. The third call changed the system text, and the guard called it "too short" because the prompt counted as 1,485 tokens and the guard's floor is 2,048. The nightly Nova prompt is now long enough to clear that floor.
+Learned (for Abhranshu):
+- Run `42404875158` (2026-11-07 19:10 UTC, commit `60e4500`) passed the key check and the one-run-per-day check. `make contract` then failed both live tests.
+- Gemini error: `TypeError: Models.generate_content() got an unexpected keyword argument 'session_id'`.
+- Nova error: the break cause was `below_minimum` (`Context tokens (1485) below provider minimum (2048)`), not a failed cache read.
+GTM-ready: no new live claim. The next night is the first one that can go green.
+Blocked on Abhranshu: nothing
 
 ## 2026-11-06 · Nightly job uses the keys, and will not call the bad Bedrock URL
 Gate commands and output tails:
