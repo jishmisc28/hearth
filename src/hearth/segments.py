@@ -41,6 +41,61 @@ def classify_message(
     return StabilityClass.APPEND
 
 
+def _part_text(part: Any) -> str:
+    if isinstance(part, str):
+        return part
+    if isinstance(part, dict):
+        if "text" in part:
+            return str(part.get("text") or "")
+        return str(part)
+    text = getattr(part, "text", None)
+    if isinstance(text, str):
+        return text
+    return str(part)
+
+
+def contents_as_messages(contents: Any) -> list[dict[str, Any]]:
+    """Turn Gemini ``contents`` into messages for the guard.
+
+    The provider still receives the original ``contents``. This view is only
+    used to count tokens and detect a changed prompt.
+    """
+    if contents is None:
+        return []
+    if isinstance(contents, str):
+        return [{"role": "user", "content": contents}]
+    if not isinstance(contents, list):
+        return [{"role": "user", "content": _part_text(contents)}]
+
+    messages: list[dict[str, Any]] = []
+    for item in contents:
+        if isinstance(item, str):
+            messages.append({"role": "user", "content": item})
+            continue
+        if isinstance(item, dict):
+            role = str(item.get("role", "user"))
+            if "parts" in item:
+                parts = item.get("parts")
+                text = (
+                    "\n".join(_part_text(part) for part in parts) if isinstance(parts, list) else ""
+                )
+                messages.append({"role": role, "content": text})
+            elif "content" in item:
+                messages.append({"role": role, "content": item.get("content")})
+            else:
+                messages.append({"role": role, "content": str(item)})
+            continue
+        role = str(getattr(item, "role", "user"))
+        parts = getattr(item, "parts", None)
+        if isinstance(parts, list):
+            messages.append(
+                {"role": role, "content": "\n".join(_part_text(part) for part in parts)}
+            )
+        else:
+            messages.append({"role": role, "content": _part_text(item)})
+    return messages
+
+
 def segment_request(
     system: Any = None,
     tools: list[dict[str, Any]] | None = None,

@@ -29,7 +29,7 @@ from hearth.layout import (
 from hearth.ledger import Ledger
 from hearth.otel import record_span
 from hearth.planner import get_ttl_optimizer, plan_breakpoints
-from hearth.segments import segment_request
+from hearth.segments import contents_as_messages, segment_request
 from hearth.sim.tokens import count_text_tokens
 from hearth.trace import TraceRecorder, get_trace_recorder
 
@@ -165,8 +165,11 @@ class WrappedMethod:
                     mod_kwargs["messages"] = layout_messages
                 changes_list.extend(layout_changes)
 
-        # 2. Segment request
-        messages = mod_kwargs.get("messages", [])
+        # 2. Segment request. Gemini puts the prompt in ``contents``, not ``messages``.
+        # Counting only ``messages`` scored that prompt as 0 tokens.
+        messages = mod_kwargs.get("messages") or []
+        if not messages and "contents" in mod_kwargs:
+            messages = contents_as_messages(mod_kwargs.get("contents"))
         system = mod_kwargs.get("system", "")
         segments = segment_request(
             system=system,

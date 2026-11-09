@@ -3,7 +3,8 @@ name: contract
 # One live run per UTC day. Gemini if that key exists, Nova on Bedrock Converse
 # if that key exists. A chat-completions URL in BEDROCK_ENDPOINT is ignored.
 # Output length is capped in the tests. A second click the same day stops
-# before any model is called.
+# before any model is called, and that stop is a success. A failed model
+# step does not block a retry the same day.
 on:
   schedule:
     - cron: "0 15 * * *"
@@ -38,19 +39,24 @@ jobs:
             exit 1
           fi
       - name: Stop a second live run today
+        id: spend
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          already=false
           today=$(date -u +%Y-%m-%d)
           ids=$(gh run list --workflow=contract.yml --created "$today" --limit 30 --json databaseId,status --jq '.[] | select(.status=="completed") | .databaseId')
           for id in $ids; do
-            hit=$(gh run view "$id" --json jobs --jq '.jobs[].steps[]? | select(.name=="make contract" and (.conclusion=="success" or .conclusion=="failure")) | .name')
+            hit=$(gh run view "$id" --json jobs --jq '.jobs[].steps[]? | select(.name=="make contract" and .conclusion=="success") | .name')
             if [ -n "$hit" ]; then
-              echo "Run $id already called a model today ($today UTC). Not starting another."
-              exit 1
+              echo "Run $id already called a model today ($today UTC) and passed. Not starting another."
+              already=true
+              break
             fi
           done
+          echo "already=$already" >> "$GITHUB_OUTPUT"
       - name: make contract
+        if: steps.spend.outputs.already != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
