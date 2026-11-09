@@ -13,10 +13,25 @@ Newest first. Format in `CLAUDE.md`. The GTM thread decides what can be claimed 
 | M6 switch-or-stay | VERIFIED | 2026-10-19 | C-11 |
 | M7 hardening & v0.1 | IN PROGRESS | 2026-11-02 live Bedrock | Release gate (C-01 to C-11) |
 
-## Plan: The nightly job can call Gemini and Nova. One model run per UTC day.
-Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is not used. `session_id` is not sent to the model.
+## Plan: The nightly job can call Gemini and Nova. One passing model run per UTC day.
+Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is not used. `session_id` is not sent to the model. Gemini prompts in `contents` are counted.
 
 ## Log
+
+## 2026-11-09 · Live contract run passed
+Gate commands and output tails:
+- GitHub Actions run `42637284192` on `cd9d0e5`, started by hand at 2026-11-09 14:42 UTC. Job `contract` succeeded.
+- `make contract`: `3 passed, 1 skipped, 80 deselected in 5.99s`. The skip is OpenAI, because `OPENAI_API_KEY` is not set. Gemini, Nova, and the offline guard check passed.
+Numbers: no dollar figure. The run did call Gemini and Nova. Output was capped at 32 and 8 tokens.
+What changed (user-visible first):
+- The Nov 8 night (`42513962779`, commit `8de4ad0`) called both models. Nova passed. Gemini's cache read passed, then the guard scored the prompt as 0 tokens and named the change `below_minimum`. Gemini puts the prompt in `contents`, and the guard was only reading `messages`.
+- `contents` is now counted. A changed Gemini prompt is recorded as a rewritten message. The provider still receives the original `contents`.
+- A later run on the same UTC day, after a passing model step, stops before spending and the job stays green. A failed model step does not block a retry that day.
+Learned (for Abhranshu):
+- Run `42637284192` is the proof. `tests/test_contract.py .s..` means Gemini passed, OpenAI skipped, Nova passed, offline guard passed.
+- The two warnings are inside Google's `google/genai/types.py`, not in Hearth.
+GTM-ready: one green night, not a five-night streak. No dollar saving is stated.
+Blocked on Abhranshu: nothing
 
 ## 2026-11-08 · Nightly calls reached the models, then failed on two checks
 Gate commands and output tails:
