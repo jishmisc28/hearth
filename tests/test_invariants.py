@@ -561,3 +561,21 @@ def test_cost_decimal() -> None:
     # Check that savings are positive and cost_ratio < 1
     assert cost.savings_amount > Decimal("0")
     assert cost.cost_ratio < Decimal("1")
+
+
+def test_nova_micro_cache_read_costs_a_quarter_of_input() -> None:
+    """Nova Micro cache reads are priced at 0.25x input in the US East price list."""
+    from decimal import Decimal
+
+    from hearth.cost import compute_call_cost
+
+    cost = compute_call_cost(
+        provider="bedrock",
+        model="amazon.nova-micro-v1:0",
+        read_tokens=1000,
+        write_tokens=0,
+        uncached_tokens=0,
+        output_tokens=0,
+    )
+    assert cost.cost_ratio == Decimal("0.2500")
+    assert cost.actual_cost == Decimal("0.00000875")

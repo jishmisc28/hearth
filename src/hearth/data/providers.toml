@@ -97,3 +97,39 @@ output_price_per_million = 0.60
 min_prefix_tokens = 1024
 read_multiplier = 0.10
 write_multiplier = 1.25
+
+# Amazon Bedrock, US East (N. Virginia). Prices are the on-demand rows in the
+# AWS price list, converted from USD per 1K tokens to USD per 1M tokens.
+# Nova cache read is 0.25x input. Nova cache write is $0. gpt-oss has input
+# and output prices and no cache-read row, so its multipliers stay at 1.
+# Cache minimums for Nova are from the Bedrock prompt-caching guide.
+[providers.bedrock]
+name = "Amazon Bedrock"
+source_url = "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/20261111013037/us-east-1/index.json"
+source_date = "2026-11-11"
+caching_mode = "explicit_checkpoints"
+default_ttl_seconds = 300
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 0.00
+
+[providers.bedrock.models."amazon.nova-micro-v1:0"]
+input_price_per_million = 0.035
+output_price_per_million = 0.140
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 0.00
+
+[providers.bedrock.models."amazon.nova-lite-v1:0"]
+input_price_per_million = 0.060
+output_price_per_million = 0.240
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 0.00
+
+[providers.bedrock.models."openai.gpt-oss-120b-1:0"]
+input_price_per_million = 0.15
+output_price_per_million = 0.60
+min_prefix_tokens = 1024
+read_multiplier = 1.00
+write_multiplier = 1.00

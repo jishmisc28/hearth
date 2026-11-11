@@ -1,0 +1,27 @@
+name: bedrock-probe
+
+# Manual only. Nova Micro, Nova Lite, and one cheap Claude Haiku.
+# The script stops before the estimated bill reaches $1.
+# gpt-oss is not called.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv pip install -e .
+      - name: Probe
+        env:
+          BEDROCK_API_KEY: ${{ secrets.BEDROCK_API_KEY }}
+          BEDROCK_ENDPOINT: ${{ secrets.BEDROCK_ENDPOINT }}
+        run: python bench/bedrock_probe.py
