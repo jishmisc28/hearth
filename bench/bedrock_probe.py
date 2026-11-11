@@ -36,10 +36,15 @@ CLAUDE_CANDIDATES = (
     "anthropic.claude-3-5-haiku-20241022-v1:0",
     "us.anthropic.claude-3-haiku-20240307-v1:0",
 )
+# Haiku 4.5's cache minimum is 4,096 tokens, so it gets a longer prompt.
+HAIKU_45 = (
+    "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "anthropic.claude-haiku-4-5-20251001-v1:0",
+)
 
 
-def _prompt() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    text = "The repository rule is stable. " * 140
+def _prompt(repeats: int = 140) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    text = "The repository rule is stable. " * repeats
     system = [{"text": text}, {"cachePoint": {"type": "default"}}]
     messages = [{"role": "user", "content": [{"text": "Reply with the single word ok."}]}]
     return system, messages
@@ -91,8 +96,10 @@ def main() -> None:
     endpoint = converse_endpoint(os.environ.get("BEDROCK_ENDPOINT"))
     client = BedrockConverse(endpoint, api_key)
     wrapped = hearth.wrap(client, mode="safe")
-    system, messages = _prompt()
+    short_system, short_messages = _prompt(140)
+    long_system, long_messages = _prompt(650)
     limits = {"maxTokens": 8, "temperature": 0}
+    only = os.environ.get("PROBE_ONLY", "").strip()
     spent = Decimal("0")
 
     _emit(
@@ -102,8 +109,8 @@ def main() -> None:
         }
     )
 
-    def room_for(model: str) -> bool:
-        guess = {"read": 0, "write": 2000, "uncached": 0, "output": 8}
+    def room_for(model: str, tokens: int = 2000) -> bool:
+        guess = {"read": 0, "write": tokens, "uncached": 0, "output": 8}
         reserve = _priced(model, guess)
         if reserve is None:
             reserve = _ceiling(guess)
@@ -112,9 +119,15 @@ def main() -> None:
             return False
         return True
 
-    def one_call(model: str, label: str) -> dict[str, Any] | None:
+    def one_call(
+        model: str,
+        label: str,
+        system: list[dict[str, Any]],
+        messages: list[dict[str, Any]],
+        tokens: int,
+    ) -> dict[str, Any] | None:
         nonlocal spent
-        if not room_for(model):
+        if not room_for(model, tokens):
             return None
         try:
             response = wrapped.create(
@@ -139,23 +152,39 @@ def main() -> None:
         _emit({"model": model, "label": label, "usage": usage, "cost_usd": shown})
         return {"usage": usage}
 
-    for model in NOVA_MODELS:
-        first = one_call(model, "write")
+    nova_models = () if only else NOVA_MODELS
+    claude_models = (only,) if only else CLAUDE_CANDIDATES
+    for model in nova_models:
+        first = one_call(model, "write", short_system, short_messages, 2000)
         if first is None or "error" in first:
             continue
-        one_call(model, "read")
+        one_call(model, "read", short_system, short_messages, 2000)
 
-    for model in CLAUDE_CANDIDATES:
-        if not room_for(model):
-            break
-        first = one_call(model, "write")
+    claude_hit = False
+    for model in claude_models:
+        prompt_system, prompt_messages, tokens = short_system, short_messages, 2000
+        if "haiku-4-5" in model:
+            prompt_system, prompt_messages, tokens = long_system, long_messages, 8000
+        first = one_call(model, "write", prompt_system, prompt_messages, tokens)
         if first is None:
             break
         if "error" in first:
             continue
-        second = one_call(model, "read")
+        second = one_call(model, "read", prompt_system, prompt_messages, tokens)
         if second is not None:
+            claude_hit = True
             break
+
+    if not only and not claude_hit:
+        for model in HAIKU_45:
+            first = one_call(model, "write", long_system, long_messages, 8000)
+            if first is None:
+                break
+            if "error" in first:
+                continue
+            second = one_call(model, "read", long_system, long_messages, 8000)
+            if second is not None:
+                break
 
     _emit({"spent_usd_priced_plus_ceiling": str(spent), "cap_usd": "1"})
 

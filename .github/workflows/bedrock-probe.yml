@@ -5,6 +5,12 @@ name: bedrock-probe
 # gpt-oss is not called.
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "One model id. Leave empty for Nova plus one cheap Claude."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -24,4 +30,5 @@ jobs:
         env:
           BEDROCK_API_KEY: ${{ secrets.BEDROCK_API_KEY }}
           BEDROCK_ENDPOINT: ${{ secrets.BEDROCK_ENDPOINT }}
+          PROBE_ONLY: ${{ inputs.only }}
         run: python bench/bedrock_probe.py
