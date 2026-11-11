@@ -18,6 +18,23 @@ Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is n
 
 ## Log
 
+## 2026-11-11 · Nova cache saving is priced. Claude on this account is not.
+Gate commands and output tails:
+- `make check` at `b50ad25`: `82 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 81 passed, 4 deselected`
+- Probe run `43070714893`: Nova Micro and Nova Lite each read 841 cached tokens on the second call.
+- Probe run `43070974414`: Claude Haiku 4.5 returned 3,915 input tokens and 0 cache tokens, then the account refused the next call.
+Numbers: priced Bedrock spend in `docs/BENCH.md` is $0.00093170. The Haiku 4.5 call is not in that dollar total.
+What changed (user-visible first):
+- Nova Micro and Nova Lite now have sourced US East prices. A cache read costs a quarter of the normal input price. A cache write costs $0.
+- Today's Nova Micro pair cost $0.00000834 instead of $0.00005986. Nova Lite cost $0.00001478 instead of $0.00010308.
+- gpt-oss still shows no cache, so its priced saving is $0. The six earlier calls cost $0.00085410.
+- This Bedrock account cannot finish a Claude cache check until the Anthropic use-case form is submitted. Haiku 5.5 is not enabled. The older Haiku ids are end of life.
+Learned (for Abhranshu):
+- The saving that can be said out loud is the Nova rate: cached input tokens were billed at 0.25×, and the write was free. The dollar amount on these short prompts is a fraction of a cent.
+- `src/hearth/data/providers.toml` Bedrock rows use the price list `20261111013037`, publication date 2026-11-11.
+GTM-ready: the Nova rate above. No Claude saving, and no gpt-oss saving.
+Blocked on Abhranshu: the Anthropic use-case form in the Bedrock console, if a Claude number is wanted. Nothing else for this check.
+
 ## 2026-11-09 · Live contract run passed
 Gate commands and output tails:
 - GitHub Actions run `42637284192` on `cd9d0e5`, started by hand at 2026-11-09 14:42 UTC. Job `contract` succeeded.
