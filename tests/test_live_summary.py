@@ -30,6 +30,27 @@ def test_nova_session_savings_match_the_price_list() -> None:
     )
 
 
+def test_chat_usage_splits_cached_tokens_out_of_the_prompt() -> None:
+    path = Path(__file__).resolve().parents[1] / "bench" / "live_broad.py"
+    spec = importlib.util.spec_from_file_location("live_broad", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    parsed = module.parse_usage(
+        {
+            "prompt_tokens": 100,
+            "completion_tokens": 4,
+            "prompt_tokens_details": {"cached_tokens": 80},
+            "cache_write_tokens": 10,
+        }
+    )
+    assert parsed == {"read": 80, "write": 10, "uncached": 10, "output": 4}
+    assert (
+        module.parse_usage({"prompt_tokens": 5, "prompt_tokens_details": {"cached_tokens": 9}})
+        is None
+    )
+
+
 def test_a_tool_use_is_followed_by_a_tool_result() -> None:
     path = Path(__file__).resolve().parents[1] / "bench" / "live_session.py"
     spec = importlib.util.spec_from_file_location("live_session", path)

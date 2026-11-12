@@ -133,3 +133,67 @@ output_price_per_million = 0.60
 min_prefix_tokens = 1024
 read_multiplier = 1.00
 write_multiplier = 1.00
+
+# Regional on-demand, US East, standard tier. Per 1K in the price list:
+# input 0.0033, output 0.0165, cache read 0.00033, cache write 30m 0.004125.
+# Read is 0.10x input. Write is 1.25x input. The global profile is cheaper
+# and is a separate model id below.
+[providers.bedrock.models."us.moonshotai.kimi-k3"]
+input_price_per_million = 3.30
+output_price_per_million = 16.50
+min_prefix_tokens = 1024
+read_multiplier = 0.10
+write_multiplier = 1.25
+
+[providers.bedrock.models."moonshotai.kimi-k3"]
+input_price_per_million = 3.30
+output_price_per_million = 16.50
+min_prefix_tokens = 1024
+read_multiplier = 0.10
+write_multiplier = 1.25
+
+# Global standard: input 0.003, output 0.015, cache read 0.0003, write 0.00375 per 1K.
+[providers.bedrock.models."global.moonshotai.kimi-k3"]
+input_price_per_million = 3.00
+output_price_per_million = 15.00
+min_prefix_tokens = 1024
+read_multiplier = 0.10
+write_multiplier = 1.25
+
+# Grok regional standard. Input 0.0022, output 0.0066, cache read 0.00055 per 1K.
+# The price list has no cache-write row, so a write is priced as standard input.
+[providers.bedrock.models."us.xai.grok-4.7"]
+input_price_per_million = 2.20
+output_price_per_million = 6.60
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 1.00
+
+[providers.bedrock.models."xai.grok-4.7"]
+input_price_per_million = 2.20
+output_price_per_million = 6.60
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 1.00
+
+[providers.bedrock.models."us.xai.grok-4.6"]
+input_price_per_million = 2.20
+output_price_per_million = 6.60
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 1.00
+
+[providers.bedrock.models."xai.grok-4.6"]
+input_price_per_million = 2.20
+output_price_per_million = 6.60
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 1.00
+
+# Nova Pro: input 0.0008, output 0.0032, cache read 0.0002, cache write 0 per 1K.
+[providers.bedrock.models."amazon.nova-pro-v1:0"]
+input_price_per_million = 0.80
+output_price_per_million = 3.20
+min_prefix_tokens = 1024
+read_multiplier = 0.25
+write_multiplier = 0.00

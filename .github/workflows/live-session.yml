@@ -1,18 +1,18 @@
 name: live-session
 
-# Manual. One agent session on Gemini 2.5 Flash, Nova Micro, and Nova Lite.
-# Seven stable turns, then one changed instruction. Stops before $1.
+# Manual. questions and tools stop before $1. broad stops before $5.
 on:
   workflow_dispatch:
     inputs:
       case:
-        description: "questions keeps the first session. tools adds a tool-calling session."
+        description: "questions or tools stay under $1. broad tries more models under $5."
         required: true
         default: questions
         type: choice
         options:
           - questions
           - tools
+          - broad
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ permissions:
 jobs:
   session:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -34,4 +34,9 @@ jobs:
           BEDROCK_API_KEY: ${{ secrets.BEDROCK_API_KEY }}
           BEDROCK_ENDPOINT: ${{ secrets.BEDROCK_ENDPOINT }}
           LIVE_CASE: ${{ inputs.case }}
-        run: python bench/live_session.py
+        run: |
+          if [ "$LIVE_CASE" = "broad" ]; then
+            python bench/live_broad.py
+          else
+            python bench/live_session.py
+          fi

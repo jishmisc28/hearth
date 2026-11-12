@@ -579,3 +579,39 @@ def test_nova_micro_cache_read_costs_a_quarter_of_input() -> None:
     )
     assert cost.cost_ratio == Decimal("0.2500")
     assert cost.actual_cost == Decimal("0.00000875")
+
+
+def test_kimi_k3_cache_read_costs_one_tenth_of_input() -> None:
+    """Kimi K3 cache reads are priced at 0.10x input in the US East price list."""
+    from decimal import Decimal
+
+    from hearth.cost import compute_call_cost
+
+    cost = compute_call_cost(
+        provider="bedrock",
+        model="us.moonshotai.kimi-k3",
+        read_tokens=1000,
+        write_tokens=0,
+        uncached_tokens=0,
+        output_tokens=0,
+    )
+    assert cost.cost_ratio == Decimal("0.1000")
+    assert cost.actual_cost == Decimal("0.00033000")
+
+
+def test_nova_pro_cache_read_costs_a_quarter_of_input() -> None:
+    """Nova Pro cache reads are priced at 0.25x input in the US East price list."""
+    from decimal import Decimal
+
+    from hearth.cost import compute_call_cost
+
+    cost = compute_call_cost(
+        provider="bedrock",
+        model="amazon.nova-pro-v1:0",
+        read_tokens=1000,
+        write_tokens=0,
+        uncached_tokens=0,
+        output_tokens=0,
+    )
+    assert cost.cost_ratio == Decimal("0.2500")
+    assert cost.actual_cost == Decimal("0.00020000")
