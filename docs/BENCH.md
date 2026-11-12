@@ -6,7 +6,7 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 
 - **Approved M0 + Contract Test Budget:** $25.00
 - **Approved GTM Budget:** $30.00
-- **Total Spent to Date:** $0.00910820 priced. One Claude Haiku 4.5 call is listed in tokens only, because that model has no price row.
+- **Total Spent to Date:** $0.98023148 priced. One Claude Haiku 4.5 call is listed in tokens only, because that model has no price row.
 
 ## Spend Log
 
@@ -36,6 +36,9 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 | 2026-11-12 | 43264432066 | tool attempt, 3 turns, then rejected | amazon.nova-lite-v1:0 | 39857 | 39817 | 165 | 0.00063926 | 0.00690609 |
 | 2026-11-12 | 43264643293 | tool session, 6 turns | amazon.nova-micro-v1:0 | 81438 | 79791 | 509 | 0.00082708 | 0.00773317 |
 | 2026-11-12 | 43264643293 | tool session, 6 turns | amazon.nova-lite-v1:0 | 81112 | 79700 | 395 | 0.00137503 | 0.00910820 |
+| 2026-11-12 | 43269713464 | short probe | us.moonshotai.kimi-k3 | 103 | 0 | 32 | 0.00086790 | 0.00997610 |
+| 2026-11-12 | 43269713464 | agent session, 7 turns | us.moonshotai.kimi-k3 | 672725 | 480390 read, 192159 written | 224 | 0.95546138 | 0.96543748 |
+| 2026-11-12 | 43269713464 | agent session, 7 turns | amazon.nova-pro-v1:0 | 100853 | 72006 read, 28804 written | 112 | 0.01479400 | 0.98023148 |
 
 The second identical 1,699-token gpt-oss prompt returned the same usage as the first. No `cached_tokens` field was present. A clock prefixed to that prompt changed the billed input from 1,699 to 1,716. `DeepSeek-V3.1` (`deepseek.v3-v1:0` and `deepseek.v3.1`) was rejected as an invalid model id on this key.
 
@@ -44,6 +47,8 @@ Nova Micro is a different API. Two identical Converse calls with a cache checkpo
 The US East price list published 2026-11-11 prices Nova cache reads at 0.25× the normal input price and Nova cache writes at $0. gpt-oss has an input and output price and no cache-read price. Its six calls cost $0.00085410 and saved $0, because the responses had no cache fields.
 
 On 2026-11-12 run `43261384508` sent one agent session: the same long instructions, a new short question each turn, then one changed instruction. Turn counts and dollars are the session rows below. The per-turn counts are in `bench/live/2026-11-12.json`. Gemini stopped after six turns with a free-tier 429. Nova finished eight turns, and the changed instruction cleared the cache read.
+
+On 2026-11-12 run `43269713464` raised the cap to $5 and called the models this account can actually run. Kimi K3 wrote 96,078 tokens, then read them on the next five questions. The seventh turn changed the instructions and the read went back to 0. That session cost $0.95546138 against an uncached bill of $2.22368850. Nova Pro did the same shape at 14,401 cached tokens and cost $0.01479400. Claude again asked for the Anthropic use-case form. GPT-5.4, GPT-5.5, GPT-5.6 Luna, Grok 4.6, and Grok 4.7 returned HTTP 403. The per-turn counts are in `bench/live/2026-11-12-broad.json`. This run added $0.97112328.
 
 The same day, a tool session kept that checkpoint on the instructions and sent three tools. The first two attempts were rejected by Nova with HTTP 424, an invalid tool sequence, after the cache had been written. Those calls cost $0.00078748. Run `43264643293` then completed six turns on Nova Micro and Nova Lite. Turn 1 read the 13,266 tokens written by the first attempt. The sixth turn changed one tool description and the cache read stayed: 13,336 of 13,884 on Nova Micro, and 13,300 of 13,776 on Nova Lite. The per-turn counts are in `bench/live/2026-11-12-tools.json`. This run added $0.00220211.
 

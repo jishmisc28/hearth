@@ -18,6 +18,21 @@ Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is n
 
 ## Log
 
+## 2026-11-12 · Kimi K3 saved $1.27 on one session. Claude, GPT-5, and Grok did not answer.
+Gate commands and output tails:
+- `make check` at `49adbd6`: `87 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 87 passed, 4 deselected`
+- GitHub Actions run `43269713464` completed. Kimi K3 and Nova Pro each finished 7 turns.
+Numbers: this run added $0.97112328. Priced spend to date is $0.98023148. The cap was $5.
+What changed (user-visible first):
+- Kimi K3 read 96,078 of 96,103 tokens on the second turn. The session cost $0.95546138, which is 43.0% of the uncached bill of $2.22368850. Saved $1.26822712.
+- The seventh turn changed the instructions. The cache read went to 0 on Kimi and on Nova Pro.
+- Claude Haiku 4.5 asked for the Anthropic use-case form. GPT-5.4, GPT-5.5, GPT-5.6 Luna, Grok 4.6, and Grok 4.7 returned HTTP 403.
+Learned (for Abhranshu):
+- A Kimi cache write costs 1.25× the normal input price, so the first turn and the changed-instruction turn cost more than sending the prompt with no cache. The five reads, at 0.10×, are where the $1.27 comes from.
+- Nova Pro confirmed the same pattern and stayed at $0.01479400, because its cache holds about 20,000 tokens.
+GTM-ready: the Kimi session ratio, with the 1,000-session figure labeled as a projection ($1,268.23).
+Blocked on Abhranshu: the Anthropic use-case form, if Claude is wanted. Access to GPT-5 and Grok on this Bedrock account, if those models are wanted. A direct OpenAI key, if OpenAI is wanted outside Bedrock.
+
 ## 2026-11-12 · A tool session kept the cache when one tool changed
 Gate commands and output tails:
 - `make check` at `c99adae`: `86 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 84 passed, 4 deselected`

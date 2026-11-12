@@ -37,6 +37,27 @@ Changing the tool description did not clear the cache read. The checkpoint is on
 
 The 1,000-session column multiplies this measured session by 1,000. It is not a second experiment. Gemini was not called. The free-tier quota had already stopped the question session.
 
+## Live session on Kimi K3 and Nova Pro · 2026-11-12
+
+Run `43269713464`, commit `49adbd6`. Raw counts: `bench/live/2026-11-12-broad.json`. The cap for this run was $5. It spent $0.97112328.
+
+The same instructions, 96,078 tokens on Kimi K3, were sent with a new short question on each of six turns. The seventh turn changed the instructions. Kimi used an explicit cache breakpoint. A cache write is priced at 1.25× the normal input price, and a cache read at 0.10×. Replies were capped at 32 tokens. 24 of those were reasoning tokens.
+
+| Model | Turns measured | Cache read on the second turn | Session cost | Uncached cost of those tokens | Session cost as a share of uncached | 1,000 sessions, projected saving |
+|---|---:|---:|---:|---:|---:|---:|
+| Kimi K3 | 7, including the changed instruction | 96,078 of 96,103 (99.97%) | $0.95546138 | $2.22368850 | 43.0% | $1,268.23 |
+| Nova Pro | 7, including the changed instruction | 14,401 of 14,407 (99.96%) | $0.01479400 | $0.08104080 | 18.3% | $66.25 |
+
+On both models the changed instruction cleared the cache read, and the next response wrote the new prefix. Kimi's first turn and seventh turn cost more than the uncached price, because the write is 1.25×. The five reads in between are what produced the $1.26822712 saving.
+
+Nova Pro's cache holds about 20,000 tokens, so the same shape stays at $0.01479400. The rate is the result. A longer Nova prompt would not become a larger cache.
+
+A short Kimi probe before the session cost $0.00086790 and is in `docs/BENCH.md`. It is not in the table.
+
+Claude Haiku 4.5 returned HTTP 404 and asked for the Anthropic use-case form. GPT-5.4, GPT-5.5, and GPT-5.6 Luna returned HTTP 403, not available on this account. Grok 4.6 and Grok 4.7 returned the same 403. There is no direct OpenAI key, so OpenAI was not called outside Bedrock. Those models have no row in this table.
+
+The 1,000-session column multiplies this measured session by 1,000. It is not a second experiment.
+
 
 ---
 

@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCES = (
     ROOT / "bench" / "live" / "2026-11-12.json",
     ROOT / "bench" / "live" / "2026-11-12-tools.json",
+    ROOT / "bench" / "live" / "2026-11-12-broad.json",
 )
 TARGET = ROOT / "hearth-live-session.html"
 
@@ -106,12 +107,12 @@ def main() -> None:
 </head>
 <body>
 <main>
-  <h1>Two measured sessions on the models that cached.</h1>
-  <p>12 Nov 2026. The first session asks questions against fixed instructions. The second keeps those instructions and calls tools, then changes one tool description. Every dollar below is computed from the provider's token counts and the sourced price list.</p>
+  <h1>Measured sessions on the models that cached.</h1>
+  <p>12 Nov 2026. One session asks questions. One session calls tools. One session uses the models that answered under a $5 cap. Every dollar below is computed from the provider's token counts and the sourced price list.</p>
   {"".join(blocks)}
   <section>
     <h2>What this page does not say</h2>
-    <p>gpt-oss is not here. Earlier calls returned no cache fields. Claude is not here. This Bedrock account blocked Haiku until the Anthropic use-case form is submitted. Gemini stopped on turn 7 of the question session because the key is on the free-tier quota. The tool session did not call Gemini. The older 42% figure in <code>docs/REPORT.md</code> is the offline simulator, not this bill.</p>
+    <p>gpt-oss is not here. Earlier calls returned no cache fields. Claude is not here. This Bedrock account still asks for the Anthropic use-case form. GPT-5.4, GPT-5.5, GPT-5.6 Luna, Grok 4.6, and Grok 4.7 returned HTTP 403 on this account. There is no direct OpenAI key. Gemini stopped on turn 7 of the question session because the key is on the free-tier quota. The older 42% figure in <code>docs/REPORT.md</code> is the offline simulator, not this bill.</p>
   </section>
 </main>
 </body>
