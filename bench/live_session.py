@@ -229,6 +229,17 @@ def _nova_tools(changed: bool) -> list[dict[str, Any]]:
     ]
 
 
+def _assistant_blocks(response: Any) -> tuple[list[dict[str, Any]], str]:
+    raw = getattr(response, "raw", None)
+    if not isinstance(raw, dict):
+        return [], ""
+    blocks = raw.get("output", {}).get("message", {}).get("content")
+    content = (
+        [block for block in blocks if isinstance(block, dict)] if isinstance(blocks, list) else []
+    )
+    return content, str(raw.get("stopReason") or "")
+
+
 def _tool_result_message(content: list[dict[str, Any]]) -> dict[str, Any] | None:
     results = []
     for block in content:
@@ -270,7 +281,7 @@ def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
                 system=[{"text": system_text}, {"cachePoint": {"type": "default"}}],
                 messages=messages,
                 toolConfig={"tools": _nova_tools(False)},
-                inferenceConfig={"maxTokens": 64, "temperature": 0},
+                inferenceConfig={"maxTokens": 512, "temperature": 0},
                 session_id=session_id,
             )
             usage = _nova_usage(response)
@@ -287,6 +298,7 @@ def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
                 }
             )
             return
+        content, stop = _assistant_blocks(response)
         _emit(
             {
                 "case": "tool-session",
@@ -294,14 +306,19 @@ def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
                 "provider": "bedrock",
                 "turn": index,
                 "kind": "stable",
+                "stop": stop,
                 "usage": usage,
                 "cost_usd": spend.add("bedrock", model, usage),
             }
         )
-        # Nova rejects a replay of a tool call that was cut off by the token cap.
-        # The next turn still sends the same tools. The history added here is only
-        # a short acknowledgement, so the cached instructions can be read.
-        messages.append({"role": "assistant", "content": [{"text": "Noted."}]})
+        # A tool call cut off by the token cap is not a valid next message.
+        # A finished tool call is followed by a short tool result.
+        follow = _tool_result_message(content) if stop != "max_tokens" else None
+        if follow is None:
+            messages.append({"role": "assistant", "content": [{"text": "Noted."}]})
+        else:
+            messages.append({"role": "assistant", "content": content})
+            messages.append(follow)
     if not spend.room("bedrock", model, 20000):
         return
     messages.append({"role": "user", "content": [{"text": "Search again with the updated tool."}]})
@@ -311,10 +328,11 @@ def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
             system=[{"text": system_text}, {"cachePoint": {"type": "default"}}],
             messages=messages,
             toolConfig={"tools": _nova_tools(True)},
-            inferenceConfig={"maxTokens": 64, "temperature": 0},
+            inferenceConfig={"maxTokens": 512, "temperature": 0},
             session_id=session_id,
         )
         usage = _nova_usage(response)
+        _content, stop = _assistant_blocks(response)
     except Exception as exc:
         detail = str(exc).replace(os.environ.get("BEDROCK_API_KEY", ""), "[redacted]")
         _emit(
@@ -335,6 +353,7 @@ def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
             "provider": "bedrock",
             "turn": len(questions) + 1,
             "kind": "break",
+            "stop": stop,
             "usage": usage,
             "cost_usd": spend.add("bedrock", model, usage),
         }
