@@ -30,6 +30,19 @@ def test_nova_session_savings_match_the_price_list() -> None:
     )
 
 
+def test_a_tool_use_is_followed_by_a_tool_result() -> None:
+    path = Path(__file__).resolve().parents[1] / "bench" / "live_session.py"
+    spec = importlib.util.spec_from_file_location("live_session", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    content = [{"toolUse": {"toolUseId": "abc", "name": "search_repo", "input": {}}}]
+    message = module._tool_result_message(content)
+    assert message is not None
+    assert message["content"][0]["toolResult"]["toolUseId"] == "abc"
+    assert module._tool_result_message([{"text": "ok"}]) is None
+
+
 def test_projection_is_the_measured_session_times_n() -> None:
     summary = _summary()
     measured = {

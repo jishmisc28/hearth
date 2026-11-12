@@ -200,9 +200,172 @@ def _run_model(
     )
 
 
+def _tool_spec(name: str, description: str) -> dict[str, Any]:
+    return {
+        "toolSpec": {
+            "name": name,
+            "description": description,
+            "inputSchema": {
+                "json": {
+                    "type": "object",
+                    "properties": {"query": {"type": "string"}},
+                    "required": ["query"],
+                }
+            },
+        }
+    }
+
+
+def _nova_tools(changed: bool) -> list[dict[str, Any]]:
+    search = (
+        "Search the repository for a renamed symbol."
+        if changed
+        else "Search the repository for a symbol."
+    )
+    return [
+        _tool_spec("search_repo", search),
+        _tool_spec("read_file", "Read a file from the repository."),
+        _tool_spec("run_tests", "Run the named test."),
+    ]
+
+
+def _assistant_content(response: Any) -> list[dict[str, Any]]:
+    raw = getattr(response, "raw", None)
+    if isinstance(raw, dict):
+        content = raw.get("output", {}).get("message", {}).get("content")
+        if isinstance(content, list) and content:
+            return content
+    return [{"text": "ok"}]
+
+
+def _tool_result_message(content: list[dict[str, Any]]) -> dict[str, Any] | None:
+    results = []
+    for block in content:
+        if not isinstance(block, dict) or "toolUse" not in block:
+            continue
+        tool_use = block["toolUse"]
+        results.append(
+            {
+                "toolResult": {
+                    "toolUseId": str(tool_use.get("toolUseId") or "tool"),
+                    "content": [{"text": "No matches."}],
+                }
+            }
+        )
+    if not results:
+        return None
+    return {"role": "user", "content": results}
+
+
+def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
+    """Stable instructions, a growing conversation, then one changed tool."""
+    system_text = _corpus()
+    session_id = f"tools-{model}"
+    messages: list[dict[str, Any]] = []
+    questions = (
+        "Find where cache reads are counted.",
+        "Open the price list loader.",
+        "Run the cost test.",
+        "Find the Nova model id.",
+        "Read the live session runner.",
+    )
+    for index, question in enumerate(questions, start=1):
+        if not spend.room("bedrock", model, 20000):
+            return
+        messages.append({"role": "user", "content": [{"text": question}]})
+        try:
+            response = wrapped.create(
+                model=model,
+                system=[{"text": system_text}, {"cachePoint": {"type": "default"}}],
+                messages=messages,
+                toolConfig={"tools": _nova_tools(False)},
+                inferenceConfig={"maxTokens": 64, "temperature": 0},
+                session_id=session_id,
+            )
+            usage = _nova_usage(response)
+        except Exception as exc:
+            detail = str(exc).replace(os.environ.get("BEDROCK_API_KEY", ""), "[redacted]")
+            _emit(
+                {
+                    "case": "tool-session",
+                    "model": model,
+                    "provider": "bedrock",
+                    "turn": index,
+                    "kind": "stable",
+                    "error": detail[:400],
+                }
+            )
+            return
+        _emit(
+            {
+                "case": "tool-session",
+                "model": model,
+                "provider": "bedrock",
+                "turn": index,
+                "kind": "stable",
+                "usage": usage,
+                "cost_usd": spend.add("bedrock", model, usage),
+            }
+        )
+        content = _assistant_content(response)
+        messages.append({"role": "assistant", "content": content})
+        follow = _tool_result_message(content)
+        if follow is not None:
+            messages.append(follow)
+    if not spend.room("bedrock", model, 20000):
+        return
+    messages.append({"role": "user", "content": [{"text": "Search again with the updated tool."}]})
+    try:
+        response = wrapped.create(
+            model=model,
+            system=[{"text": system_text}, {"cachePoint": {"type": "default"}}],
+            messages=messages,
+            toolConfig={"tools": _nova_tools(True)},
+            inferenceConfig={"maxTokens": 64, "temperature": 0},
+            session_id=session_id,
+        )
+        usage = _nova_usage(response)
+    except Exception as exc:
+        detail = str(exc).replace(os.environ.get("BEDROCK_API_KEY", ""), "[redacted]")
+        _emit(
+            {
+                "case": "tool-session",
+                "model": model,
+                "provider": "bedrock",
+                "turn": len(questions) + 1,
+                "kind": "break",
+                "error": detail[:400],
+            }
+        )
+        return
+    _emit(
+        {
+            "case": "tool-session",
+            "model": model,
+            "provider": "bedrock",
+            "turn": len(questions) + 1,
+            "kind": "break",
+            "usage": usage,
+            "cost_usd": spend.add("bedrock", model, usage),
+        }
+    )
+
+
 def main() -> None:
     os.environ["HEARTH_HOME"] = tempfile.mkdtemp(prefix="hearth-live-")
     spend = _Spend()
+    if os.environ.get("LIVE_CASE") == "tools":
+        if not os.environ.get("BEDROCK_API_KEY"):
+            raise SystemExit("BEDROCK_API_KEY is not set")
+        bedrock = BedrockConverse(
+            converse_endpoint(os.environ.get("BEDROCK_ENDPOINT")),
+            os.environ["BEDROCK_API_KEY"],
+        )
+        wrapped_bedrock = hearth.wrap(bedrock, mode="safe")
+        for model in ("amazon.nova-micro-v1:0", "amazon.nova-lite-v1:0"):
+            _run_nova_tools(spend, wrapped_bedrock, model)
+        _emit({"case": "tool-session", "spent_usd": str(spend.spent), "cap_usd": "1"})
+        return
     if os.environ.get("GEMINI_API_KEY"):
         from google import genai
 
