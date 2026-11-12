@@ -20,6 +20,24 @@ The 1,000-session column multiplies this measured session by 1,000. It is not a 
 
 gpt-oss is omitted because the earlier calls returned no cache fields. Claude is omitted because this Bedrock account blocked Haiku until the Anthropic use-case form is submitted.
 
+## Live tool session · 2026-11-12
+
+Run `43264643293`, commit `c99adae`. Raw counts: `bench/live/2026-11-12-tools.json`.
+
+The instructions and the cache checkpoint stayed fixed. Three tools were sent on every turn. Five questions each produced a tool call, and each finished tool call was followed by a short tool result, so the conversation grew. The sixth turn changed one tool description. Replies were allowed 512 tokens. Every turn stopped on `tool_use`.
+
+The first turn did not write the cache. It read 13,266 tokens that run `43264299216` had written about two minutes earlier. That earlier attempt then failed on the next turn. Two failed attempts cost $0.00078748 and are in `docs/BENCH.md`. They are not in the table below.
+
+| Model | Turns measured | Cache read on the second turn | Cache read after the tool change | Session cost | Uncached cost of those tokens | Session cost as a share of uncached | 1,000 sessions, projected saving |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Nova Micro | 6 | 13,278 of 13,386 (99.2%) | 13,336 of 13,884 (96.1%) | $0.00082708 | $0.00292160 | 28.3% | $2.09 |
+| Nova Lite | 6 | 13,272 of 13,363 (99.3%) | 13,300 of 13,776 (96.5%) | $0.00137503 | $0.00496152 | 27.7% | $3.59 |
+
+Changing the tool description did not clear the cache read. The checkpoint is on the instructions, and the tools sit outside it. The uncached tail grew because the conversation and the tool calls were appended. The read stayed on the instructions and grew by a few dozen tokens.
+
+The 1,000-session column multiplies this measured session by 1,000. It is not a second experiment. Gemini was not called. The free-tier quota had already stopped the question session.
+
+
 ---
 
 **Simulator, frozen 2026-10-19.** The table below repeats the same result on every framework row. It is a rehearsal, not the live bill above.

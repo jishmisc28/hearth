@@ -1,0 +1,320 @@
+{
+  "run_id": "43264643293",
+  "date": "2026-11-12",
+  "commit": "c99adae",
+  "case": "Five questions with the same instructions and the same three tools. Each finished tool call was followed by a short tool result, so the conversation grew. The sixth turn changed one tool description. The cache checkpoint stayed on the instructions. Replies were allowed 512 tokens so a tool call could finish. Every turn stopped on tool_use.",
+  "chart_note": "Dark bars are turns where the tools stayed the same. The brown bar is the turn that changed one tool description. The bar stays tall: that change did not clear the cache read. Height is cache-read tokens, not dollars.",
+  "cache_origin": "Turn 1 read 13,266 tokens that run 43264299216 had written about two minutes earlier. That attempt wrote the cache and then the next turn was rejected. This run did not write the prefix again.",
+  "earlier_attempts": [
+    {
+      "run_id": "43264299216",
+      "result": "Nova Micro and Nova Lite each wrote 13,266 tokens. The next turn returned HTTP 424, invalid tool sequence. Costs 0.00000917 and 0.00001380."
+    },
+    {
+      "run_id": "43264432066",
+      "result": "The written prefix was read. Nova Micro failed again on turn 2. Nova Lite completed three turns and failed on turn 4. Those calls cost 0.00076451."
+    }
+  ],
+  "sessions": [
+    {
+      "title": "Nova Micro, tool session",
+      "provider": "bedrock",
+      "model": "amazon.nova-micro-v1:0",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13266,
+          "write": 0,
+          "uncached": 6,
+          "output": 79
+        },
+        {
+          "turn": 2,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13278,
+          "write": 0,
+          "uncached": 108,
+          "output": 82
+        },
+        {
+          "turn": 3,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13291,
+          "write": 0,
+          "uncached": 211,
+          "output": 100
+        },
+        {
+          "turn": 4,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13305,
+          "write": 0,
+          "uncached": 332,
+          "output": 85
+        },
+        {
+          "turn": 5,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13315,
+          "write": 0,
+          "uncached": 442,
+          "output": 90
+        },
+        {
+          "turn": 6,
+          "kind": "break",
+          "stop": "tool_use",
+          "read": 13336,
+          "write": 0,
+          "uncached": 548,
+          "output": 73
+        }
+      ],
+      "summary": {
+        "provider": "bedrock",
+        "model": "amazon.nova-micro-v1:0",
+        "turns": [
+          {
+            "turn": 1,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13266,
+            "write": 0,
+            "uncached": 6,
+            "output": 79,
+            "cost_usd": "0.00012735",
+            "baseline_usd": "0.00047558",
+            "cost_ratio": "0.2678"
+          },
+          {
+            "turn": 2,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13278,
+            "write": 0,
+            "uncached": 108,
+            "output": 82,
+            "cost_usd": "0.00013144",
+            "baseline_usd": "0.00047999",
+            "cost_ratio": "0.2738"
+          },
+          {
+            "turn": 3,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13291,
+            "write": 0,
+            "uncached": 211,
+            "output": 100,
+            "cost_usd": "0.00013768",
+            "baseline_usd": "0.00048657",
+            "cost_ratio": "0.2830"
+          },
+          {
+            "turn": 4,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13305,
+            "write": 0,
+            "uncached": 332,
+            "output": 85,
+            "cost_usd": "0.00013994",
+            "baseline_usd": "0.00048920",
+            "cost_ratio": "0.2861"
+          },
+          {
+            "turn": 5,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13315,
+            "write": 0,
+            "uncached": 442,
+            "output": 90,
+            "cost_usd": "0.00014458",
+            "baseline_usd": "0.00049410",
+            "cost_ratio": "0.2926"
+          },
+          {
+            "turn": 6,
+            "kind": "break",
+            "stop": "tool_use",
+            "read": 13336,
+            "write": 0,
+            "uncached": 548,
+            "output": 73,
+            "cost_usd": "0.00014609",
+            "baseline_usd": "0.00049616",
+            "cost_ratio": "0.2944"
+          }
+        ],
+        "actual_usd": "0.00082708",
+        "baseline_usd": "0.00292160",
+        "saved_usd": "0.00209452",
+        "session_ratio": "0.2831"
+      },
+      "per_1000_sessions": {
+        "sessions": "1000",
+        "actual_usd": "0.82708000",
+        "baseline_usd": "2.92160000",
+        "saved_usd": "2.09452000",
+        "label": "projection from the measured session, not a separate run"
+      }
+    },
+    {
+      "title": "Nova Lite, tool session",
+      "provider": "bedrock",
+      "model": "amazon.nova-lite-v1:0",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13266,
+          "write": 0,
+          "uncached": 6,
+          "output": 56
+        },
+        {
+          "turn": 2,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13272,
+          "write": 0,
+          "uncached": 91,
+          "output": 70
+        },
+        {
+          "turn": 3,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13276,
+          "write": 0,
+          "uncached": 191,
+          "output": 64
+        },
+        {
+          "turn": 4,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13289,
+          "write": 0,
+          "uncached": 277,
+          "output": 67
+        },
+        {
+          "turn": 5,
+          "kind": "stable",
+          "stop": "tool_use",
+          "read": 13297,
+          "write": 0,
+          "uncached": 371,
+          "output": 71
+        },
+        {
+          "turn": 6,
+          "kind": "break",
+          "stop": "tool_use",
+          "read": 13300,
+          "write": 0,
+          "uncached": 476,
+          "output": 67
+        }
+      ],
+      "summary": {
+        "provider": "bedrock",
+        "model": "amazon.nova-lite-v1:0",
+        "turns": [
+          {
+            "turn": 1,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13266,
+            "write": 0,
+            "uncached": 6,
+            "output": 56,
+            "cost_usd": "0.00021279",
+            "baseline_usd": "0.00080976",
+            "cost_ratio": "0.2628"
+          },
+          {
+            "turn": 2,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13272,
+            "write": 0,
+            "uncached": 91,
+            "output": 70,
+            "cost_usd": "0.00022134",
+            "baseline_usd": "0.00081858",
+            "cost_ratio": "0.2704"
+          },
+          {
+            "turn": 3,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13276,
+            "write": 0,
+            "uncached": 191,
+            "output": 64,
+            "cost_usd": "0.00022596",
+            "baseline_usd": "0.00082338",
+            "cost_ratio": "0.2744"
+          },
+          {
+            "turn": 4,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13289,
+            "write": 0,
+            "uncached": 277,
+            "output": 67,
+            "cost_usd": "0.00023204",
+            "baseline_usd": "0.00083004",
+            "cost_ratio": "0.2795"
+          },
+          {
+            "turn": 5,
+            "kind": "stable",
+            "stop": "tool_use",
+            "read": 13297,
+            "write": 0,
+            "uncached": 371,
+            "output": 71,
+            "cost_usd": "0.00023876",
+            "baseline_usd": "0.00083712",
+            "cost_ratio": "0.2852"
+          },
+          {
+            "turn": 6,
+            "kind": "break",
+            "stop": "tool_use",
+            "read": 13300,
+            "write": 0,
+            "uncached": 476,
+            "output": 67,
+            "cost_usd": "0.00024414",
+            "baseline_usd": "0.00084264",
+            "cost_ratio": "0.2897"
+          }
+        ],
+        "actual_usd": "0.00137503",
+        "baseline_usd": "0.00496152",
+        "saved_usd": "0.00358649",
+        "session_ratio": "0.2771"
+      },
+      "per_1000_sessions": {
+        "sessions": "1000",
+        "actual_usd": "1.37503000",
+        "baseline_usd": "4.96152000",
+        "saved_usd": "3.58649000",
+        "label": "projection from the measured session, not a separate run"
+      }
+    }
+  ]
+}

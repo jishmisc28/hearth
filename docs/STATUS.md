@@ -18,6 +18,21 @@ Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is n
 
 ## Log
 
+## 2026-11-12 · A tool session kept the cache when one tool changed
+Gate commands and output tails:
+- `make check` at `c99adae`: `86 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 84 passed, 4 deselected`
+- GitHub Actions run `43264643293` completed. Nova Micro and Nova Lite each finished 6 turns, and every turn stopped on `tool_use`.
+Numbers: the two rejected attempts cost $0.00078748. The completed session added $0.00220211. Priced spend to date is $0.00910820.
+What changed (user-visible first):
+- The same instructions and three tools were sent while the conversation grew. The sixth turn changed one tool description.
+- The cache read stayed. Nova Micro still read 13,336 of 13,884 tokens. Nova Lite still read 13,300 of 13,776.
+- The session costs were 28.3% and 27.7% of the uncached bill. The raw counts are in `bench/live/2026-11-12-tools.json`.
+Learned (for Abhranshu):
+- The Nova checkpoint is on the instructions. A tool description sits outside it, so changing that description did not clear the read. Changing the instructions, in the earlier session, did.
+- Turn 1 of this run read a cache written about two minutes earlier. The first attempt wrote 13,266 tokens and then Nova rejected the next turn.
+GTM-ready: the two tool-session ratios, with the statement that a tool change did not clear the cache read. The 1,000-session figures are projections.
+Blocked on Abhranshu: Gemini billing, if a Gemini tool session is wanted. The Anthropic use-case form, if Claude is wanted.
+
 ## 2026-11-12 · One agent session is the live claim
 Gate commands and output tails:
 - `make check` at `1a0845a`: `85 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 83 passed, 4 deselected`

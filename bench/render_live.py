@@ -1,4 +1,4 @@
-"""Write hearth-live-session.html from bench/live/2026-11-12.json. No new numbers."""
+"""Write hearth-live-session.html from the measured JSON files. No new numbers."""
 
 from __future__ import annotations
 
@@ -7,7 +7,10 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "bench" / "live" / "2026-11-12.json"
+SOURCES = (
+    ROOT / "bench" / "live" / "2026-11-12.json",
+    ROOT / "bench" / "live" / "2026-11-12-tools.json",
+)
 TARGET = ROOT / "hearth-live-session.html"
 
 
@@ -42,8 +45,8 @@ def _bars(turns: list[dict], width: int = 640, height: int = 160) -> str:
     return f'<svg viewBox="0 0 {width} {height}" width="100%" role="img">{"".join(parts)}</svg>'
 
 
-def main() -> None:
-    data = json.loads(SOURCE.read_text())
+def _session_cards(data: dict) -> str:
+    note = html.escape(str(data.get("chart_note") or ""))
     cards = []
     for session in data["sessions"]:
         summary = session["summary"]
@@ -58,16 +61,36 @@ def main() -> None:
               <p>This session cost ${html.escape(summary["actual_usd"])}. The same tokens with no cache would have cost ${html.escape(summary["baseline_usd"])}. Saved ${html.escape(summary["saved_usd"])}.</p>
               <h3>Cached input tokens on each turn</h3>
               {_bars(session["turns"])}
-              <p class="note">Dark bars are stable turns. Where a short brown mark appears, that turn changed the instructions and the cache read dropped to zero. Height is cached input tokens, not dollars.</p>
+              <p class="note">{note}</p>
               <p>One thousand sessions at this measured rate would cost ${html.escape(scale["actual_usd"])} instead of ${html.escape(scale["baseline_usd"])}, a saving of ${html.escape(scale["saved_usd"])}. That line is the measured session multiplied by 1,000. It is not another run.</p>
             </section>
+            """
+        )
+    return "".join(cards)
+
+
+def main() -> None:
+    blocks = []
+    for source in SOURCES:
+        data = json.loads(source.read_text())
+        origin = html.escape(str(data.get("cache_origin") or ""))
+        origin_html = f"<p>{origin}</p>" if origin else ""
+        blocks.append(
+            f"""
+            <section>
+              <h2>Run {html.escape(str(data["run_id"]))}</h2>
+              <p>{html.escape(str(data["case"]))}</p>
+              {origin_html}
+              <p class="note">Raw counts: <code>{html.escape(source.name)}</code>. Dollars come from those counts and the sourced price list.</p>
+            </section>
+            {_session_cards(data)}
             """
         )
     page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Hearth live session, 12 Nov 2026</title>
+<title>Hearth live sessions, 12 Nov 2026</title>
 <style>
   body {{ margin: 0; background: #f4f1ea; color: #1c1917; font: 18px/1.5 Georgia, serif; }}
   main {{ max-width: 820px; margin: 0 auto; padding: 48px 24px 80px; }}
@@ -83,12 +106,12 @@ def main() -> None:
 </head>
 <body>
 <main>
-  <h1>One agent session, measured on the models that cached.</h1>
-  <p>Run {html.escape(data["run_id"])} on {html.escape(data["date"])}. The same instructions were sent with a new short question each turn, and the last Nova turn changed the instructions. Gemini stopped on the free-tier quota before that last turn. Replies were capped at 16 tokens. Every dollar below is computed from the provider's token counts and the sourced price list. The raw counts are in <code>bench/live/2026-11-12.json</code>.</p>
-  {"".join(cards)}
+  <h1>Two measured sessions on the models that cached.</h1>
+  <p>12 Nov 2026. The first session asks questions against fixed instructions. The second keeps those instructions and calls tools, then changes one tool description. Every dollar below is computed from the provider's token counts and the sourced price list.</p>
+  {"".join(blocks)}
   <section>
     <h2>What this page does not say</h2>
-    <p>gpt-oss is not here. Earlier calls returned no cache fields. Claude is not here. This Bedrock account blocked Haiku until the Anthropic use-case form is submitted. Gemini stopped on turn 7 because the key is on the free-tier quota. The older 42% figure in <code>docs/REPORT.md</code> is the offline simulator, not this bill.</p>
+    <p>gpt-oss is not here. Earlier calls returned no cache fields. Claude is not here. This Bedrock account blocked Haiku until the Anthropic use-case form is submitted. Gemini stopped on turn 7 of the question session because the key is on the free-tier quota. The tool session did not call Gemini. The older 42% figure in <code>docs/REPORT.md</code> is the offline simulator, not this bill.</p>
   </section>
 </main>
 </body>

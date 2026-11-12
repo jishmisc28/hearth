@@ -3,6 +3,7 @@
   "date": "2026-11-12",
   "commit": "1a0845a",
   "case": "Seven questions against the same instructions, then one changed instruction. Output capped at 16 tokens.",
+  "chart_note": "Dark bars are stable turns. Where a short brown mark appears, that turn changed the instructions and the cache read dropped to zero. Height is cached input tokens, not dollars.",
   "sessions": [
     {
       "title": "Gemini 2.5 Flash",

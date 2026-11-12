@@ -6,7 +6,7 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 
 - **Approved M0 + Contract Test Budget:** $25.00
 - **Approved GTM Budget:** $30.00
-- **Total Spent to Date:** $0.00611861 priced. One Claude Haiku 4.5 call is listed in tokens only, because that model has no price row.
+- **Total Spent to Date:** $0.00910820 priced. One Claude Haiku 4.5 call is listed in tokens only, because that model has no price row.
 
 ## Spend Log
 
@@ -30,6 +30,12 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 | 2026-11-12 | 43261384508 | agent session, 6 turns, then free-tier 429 | gemini-2.5-flash | 86464 | 71570 | 2 | 0.00330885 | 0.00424055 |
 | 2026-11-12 | 43261384508 | agent session, 8 turns | amazon.nova-micro-v1:0 | 102467 | 76807 read, 25605 written | 128 | 0.00069191 | 0.00493246 |
 | 2026-11-12 | 43261384508 | agent session, 8 turns | amazon.nova-lite-v1:0 | 102467 | 76807 read, 25605 written | 128 | 0.00118615 | 0.00611861 |
+| 2026-11-12 | 43264299216 | tool attempt, turn 2 rejected | amazon.nova-micro-v1:0 | 13272 | 0 read, 13266 written | 64 | 0.00000917 | 0.00612778 |
+| 2026-11-12 | 43264299216 | tool attempt, turn 2 rejected | amazon.nova-lite-v1:0 | 13272 | 0 read, 13266 written | 56 | 0.00001380 | 0.00614158 |
+| 2026-11-12 | 43264432066 | tool attempt, turn 2 rejected | amazon.nova-micro-v1:0 | 13272 | 13266 | 64 | 0.00012525 | 0.00626683 |
+| 2026-11-12 | 43264432066 | tool attempt, 3 turns, then rejected | amazon.nova-lite-v1:0 | 39857 | 39817 | 165 | 0.00063926 | 0.00690609 |
+| 2026-11-12 | 43264643293 | tool session, 6 turns | amazon.nova-micro-v1:0 | 81438 | 79791 | 509 | 0.00082708 | 0.00773317 |
+| 2026-11-12 | 43264643293 | tool session, 6 turns | amazon.nova-lite-v1:0 | 81112 | 79700 | 395 | 0.00137503 | 0.00910820 |
 
 The second identical 1,699-token gpt-oss prompt returned the same usage as the first. No `cached_tokens` field was present. A clock prefixed to that prompt changed the billed input from 1,699 to 1,716. `DeepSeek-V3.1` (`deepseek.v3-v1:0` and `deepseek.v3.1`) was rejected as an invalid model id on this key.
 
@@ -38,6 +44,8 @@ Nova Micro is a different API. Two identical Converse calls with a cache checkpo
 The US East price list published 2026-11-11 prices Nova cache reads at 0.25× the normal input price and Nova cache writes at $0. gpt-oss has an input and output price and no cache-read price. Its six calls cost $0.00085410 and saved $0, because the responses had no cache fields.
 
 On 2026-11-12 run `43261384508` sent one agent session: the same long instructions, a new short question each turn, then one changed instruction. Turn counts and dollars are the session rows below. The per-turn counts are in `bench/live/2026-11-12.json`. Gemini stopped after six turns with a free-tier 429. Nova finished eight turns, and the changed instruction cleared the cache read.
+
+The same day, a tool session kept that checkpoint on the instructions and sent three tools. The first two attempts were rejected by Nova with HTTP 424, an invalid tool sequence, after the cache had been written. Those calls cost $0.00078748. Run `43264643293` then completed six turns on Nova Micro and Nova Lite. Turn 1 read the 13,266 tokens written by the first attempt. The sixth turn changed one tool description and the cache read stayed: 13,336 of 13,884 on Nova Micro, and 13,300 of 13,776 on Nova Lite. The per-turn counts are in `bench/live/2026-11-12-tools.json`. This run added $0.00220211.
 
 On 2026-11-11 a manual probe under a $1 ceiling called Nova again and tried Claude. Nova Micro's two calls cost $0.00000834 against an uncached pair of $0.00005986. Nova Lite's two calls cost $0.00001478 against $0.00010308. On each second call, 841 of 847 input tokens were a cache read. Claude Haiku 5.5 returned HTTP 403, not enabled for this account. Claude 3 Haiku and Claude 3.5 Haiku returned HTTP 404, end of life. Claude Haiku 4.5 answered once: 3,915 input tokens and no cache write, short of that model's 4,096-token cache minimum. The next Haiku 4.5 call returned HTTP 404 asking for the Anthropic use-case form. No dollar figure is stated for that call.
 
