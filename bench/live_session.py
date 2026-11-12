@@ -229,15 +229,6 @@ def _nova_tools(changed: bool) -> list[dict[str, Any]]:
     ]
 
 
-def _assistant_content(response: Any) -> list[dict[str, Any]]:
-    raw = getattr(response, "raw", None)
-    if isinstance(raw, dict):
-        content = raw.get("output", {}).get("message", {}).get("content")
-        if isinstance(content, list) and content:
-            return content
-    return [{"text": "ok"}]
-
-
 def _tool_result_message(content: list[dict[str, Any]]) -> dict[str, Any] | None:
     results = []
     for block in content:
@@ -307,11 +298,10 @@ def _run_nova_tools(spend: _Spend, wrapped: Any, model: str) -> None:
                 "cost_usd": spend.add("bedrock", model, usage),
             }
         )
-        content = _assistant_content(response)
-        messages.append({"role": "assistant", "content": content})
-        follow = _tool_result_message(content)
-        if follow is not None:
-            messages.append(follow)
+        # Nova rejects a replay of a tool call that was cut off by the token cap.
+        # The next turn still sends the same tools. The history added here is only
+        # a short acknowledgement, so the cached instructions can be read.
+        messages.append({"role": "assistant", "content": [{"text": "Noted."}]})
     if not spend.room("bedrock", model, 20000):
         return
     messages.append({"role": "user", "content": [{"text": "Search again with the updated tool."}]})
