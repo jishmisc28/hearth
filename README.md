@@ -5,6 +5,14 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
+## Proof video
+
+Hearth is one line — `client = hearth.wrap(client)` — that keeps a provider prompt cache valid and records the bill. This silent 2:40 film walks one real Kimi K3 run (12 Nov 2026, GitHub Actions `43269713464`): the standing document, the no-cache price, the measured cache reads, the break when the document changes, and the receipt (**paid $0.95546138**, **full price $2.22368850**, **saved $1.26822712**). Numbers are from [`bench/live/2026-11-12-broad.json`](bench/live/2026-11-12-broad.json).
+
+<video src="docs/media/hearth-cost-proof.mp4" controls width="720"></video>
+
+[Download the proof video](docs/media/hearth-cost-proof.mp4) · [Live session write-up](docs/REPORT.md)
+
 An embeddable context engine that keeps an AI agent's prompt cache warm and proves it with measurements.
 
 Prompt caching cuts LLM input cost and time-to-first-token (TTFT) by up to 90%, but agent loops routinely break provider caches on every turn: volatile timestamps prepended to system instructions, fluctuating tool definitions, non-deterministic JSON serialization, and uncompacted chat histories invalidate prefixes silently.
