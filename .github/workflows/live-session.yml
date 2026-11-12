@@ -1,0 +1,27 @@
+name: live-session
+
+# Manual. One agent session on Gemini 2.5 Flash, Nova Micro, and Nova Lite.
+# Seven stable turns, then one changed instruction. Stops before $1.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv pip install -e ".[gemini]"
+      - name: Live session
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BEDROCK_API_KEY: ${{ secrets.BEDROCK_API_KEY }}
+          BEDROCK_ENDPOINT: ${{ secrets.BEDROCK_ENDPOINT }}
+        run: python bench/live_session.py
