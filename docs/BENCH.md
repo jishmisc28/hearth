@@ -6,7 +6,7 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 
 - **Approved M0 + Contract Test Budget:** $25.00
 - **Approved GTM Budget:** $30.00
-- **Total Spent to Date:** $0.00093170 priced from the 2026-11-11 US East price list. One Claude Haiku 4.5 call is listed in tokens only, because that model has no price row.
+- **Total Spent to Date:** $0.00611861 priced. One Claude Haiku 4.5 call is listed in tokens only, because that model has no price row.
 
 ## Spend Log
 
@@ -27,12 +27,17 @@ Tracks live provider calls, token totals, and spend against approved budget (D-0
 | 2026-11-11 | bedrock-probe-43070714893 | hearth.wrap safe, Converse | amazon.nova-lite-v1:0 | 847 | 0 read, 841 written | 3 | 0.00000108 | 0.00091800 |
 | 2026-11-11 | bedrock-probe-43070714893 | hearth.wrap safe, Converse | amazon.nova-lite-v1:0 | 847 | 841 | 3 | 0.00001370 | 0.00093170 |
 | 2026-11-11 | bedrock-probe-43070974414 | hearth.wrap safe, Converse | us.anthropic.claude-haiku-4-5-20251001-v1:0 | 3915 | 0 | 4 | unpriced | 0.00093170 |
+| 2026-11-12 | 43261384508 | agent session, 6 turns, then free-tier 429 | gemini-2.5-flash | 86464 | 71570 | 2 | 0.00330885 | 0.00424055 |
+| 2026-11-12 | 43261384508 | agent session, 8 turns | amazon.nova-micro-v1:0 | 102467 | 76807 read, 25605 written | 128 | 0.00069191 | 0.00493246 |
+| 2026-11-12 | 43261384508 | agent session, 8 turns | amazon.nova-lite-v1:0 | 102467 | 76807 read, 25605 written | 128 | 0.00118615 | 0.00611861 |
 
 The second identical 1,699-token gpt-oss prompt returned the same usage as the first. No `cached_tokens` field was present. A clock prefixed to that prompt changed the billed input from 1,699 to 1,716. `DeepSeek-V3.1` (`deepseek.v3-v1:0` and `deepseek.v3.1`) was rejected as an invalid model id on this key.
 
 Nova Micro is a different API. Two identical Converse calls with a cache checkpoint: the first wrote 2,401 tokens and the second read 2,401. The same shape through `hearth.wrap` in observe mode wrote 3,601 and then read 3,601. On both pairs the raw `inputTokens` field was 6, which is the uncached tail, not the whole prompt. Input tokens in the table are read + write + that tail.
 
 The US East price list published 2026-11-11 prices Nova cache reads at 0.25× the normal input price and Nova cache writes at $0. gpt-oss has an input and output price and no cache-read price. Its six calls cost $0.00085410 and saved $0, because the responses had no cache fields.
+
+On 2026-11-12 run `43261384508` sent one agent session: the same long instructions, a new short question each turn, then one changed instruction. Turn counts and dollars are the session rows below. The per-turn counts are in `bench/live/2026-11-12.json`. Gemini stopped after six turns with a free-tier 429. Nova finished eight turns, and the changed instruction cleared the cache read.
 
 On 2026-11-11 a manual probe under a $1 ceiling called Nova again and tried Claude. Nova Micro's two calls cost $0.00000834 against an uncached pair of $0.00005986. Nova Lite's two calls cost $0.00001478 against $0.00010308. On each second call, 841 of 847 input tokens were a cache read. Claude Haiku 5.5 returned HTTP 403, not enabled for this account. Claude 3 Haiku and Claude 3.5 Haiku returned HTTP 404, end of life. Claude Haiku 4.5 answered once: 3,915 input tokens and no cache write, short of that model's 4,096-token cache minimum. The next Haiku 4.5 call returned HTTP 404 asking for the Anthropic use-case form. No dollar figure is stated for that call.
 

@@ -1,0 +1,513 @@
+{
+  "run_id": "43261384508",
+  "date": "2026-11-12",
+  "commit": "1a0845a",
+  "case": "Seven questions against the same instructions, then one changed instruction. Output capped at 16 tokens.",
+  "sessions": [
+    {
+      "title": "Gemini 2.5 Flash",
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "stable",
+          "read": 0,
+          "write": 0,
+          "uncached": 14412,
+          "output": 0
+        },
+        {
+          "turn": 2,
+          "kind": "stable",
+          "read": 14314,
+          "write": 0,
+          "uncached": 96,
+          "output": 0
+        },
+        {
+          "turn": 3,
+          "kind": "stable",
+          "read": 14314,
+          "write": 0,
+          "uncached": 98,
+          "output": 0
+        },
+        {
+          "turn": 4,
+          "kind": "stable",
+          "read": 14314,
+          "write": 0,
+          "uncached": 95,
+          "output": 1
+        },
+        {
+          "turn": 5,
+          "kind": "stable",
+          "read": 14314,
+          "write": 0,
+          "uncached": 96,
+          "output": 0
+        },
+        {
+          "turn": 6,
+          "kind": "stable",
+          "read": 14314,
+          "write": 0,
+          "uncached": 97,
+          "output": 1
+        },
+        {
+          "turn": 7,
+          "kind": "stable",
+          "error": "429 RESOURCE_EXHAUSTED free-tier quota"
+        }
+      ],
+      "summary": {
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "turns": [
+          {
+            "turn": 1,
+            "kind": "stable",
+            "read": 0,
+            "write": 0,
+            "uncached": 14412,
+            "output": 0,
+            "cost_usd": "0.00216180",
+            "baseline_usd": "0.00216180",
+            "cost_ratio": "1.0000"
+          },
+          {
+            "turn": 2,
+            "kind": "stable",
+            "read": 14314,
+            "write": 0,
+            "uncached": 96,
+            "output": 0,
+            "cost_usd": "0.00022911",
+            "baseline_usd": "0.00216150",
+            "cost_ratio": "0.1060"
+          },
+          {
+            "turn": 3,
+            "kind": "stable",
+            "read": 14314,
+            "write": 0,
+            "uncached": 98,
+            "output": 0,
+            "cost_usd": "0.00022941",
+            "baseline_usd": "0.00216180",
+            "cost_ratio": "0.1061"
+          },
+          {
+            "turn": 4,
+            "kind": "stable",
+            "read": 14314,
+            "write": 0,
+            "uncached": 95,
+            "output": 1,
+            "cost_usd": "0.00022956",
+            "baseline_usd": "0.00216195",
+            "cost_ratio": "0.1062"
+          },
+          {
+            "turn": 5,
+            "kind": "stable",
+            "read": 14314,
+            "write": 0,
+            "uncached": 96,
+            "output": 0,
+            "cost_usd": "0.00022911",
+            "baseline_usd": "0.00216150",
+            "cost_ratio": "0.1060"
+          },
+          {
+            "turn": 6,
+            "kind": "stable",
+            "read": 14314,
+            "write": 0,
+            "uncached": 97,
+            "output": 1,
+            "cost_usd": "0.00022986",
+            "baseline_usd": "0.00216225",
+            "cost_ratio": "0.1063"
+          }
+        ],
+        "actual_usd": "0.00330885",
+        "baseline_usd": "0.01297080",
+        "saved_usd": "0.00966195",
+        "session_ratio": "0.2551"
+      },
+      "per_1000_sessions": {
+        "sessions": "1000",
+        "actual_usd": "3.30885000",
+        "baseline_usd": "12.97080000",
+        "saved_usd": "9.66195000",
+        "label": "projection from the measured session, not a separate run"
+      }
+    },
+    {
+      "title": "Nova Micro",
+      "provider": "bedrock",
+      "model": "amazon.nova-micro-v1:0",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "stable",
+          "read": 0,
+          "write": 12801,
+          "uncached": 8,
+          "output": 16
+        },
+        {
+          "turn": 2,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 6,
+          "output": 16
+        },
+        {
+          "turn": 3,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 8,
+          "output": 16
+        },
+        {
+          "turn": 4,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 5,
+          "output": 16
+        },
+        {
+          "turn": 5,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 6,
+          "output": 16
+        },
+        {
+          "turn": 6,
+          "kind": "stable",
+          "read": 12802,
+          "write": 0,
+          "uncached": 7,
+          "output": 16
+        },
+        {
+          "turn": 7,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 10,
+          "output": 16
+        },
+        {
+          "turn": 8,
+          "kind": "break",
+          "read": 0,
+          "write": 12804,
+          "uncached": 5,
+          "output": 16
+        }
+      ],
+      "summary": {
+        "provider": "bedrock",
+        "model": "amazon.nova-micro-v1:0",
+        "turns": [
+          {
+            "turn": 1,
+            "kind": "stable",
+            "read": 0,
+            "write": 12801,
+            "uncached": 8,
+            "output": 16,
+            "cost_usd": "0.00000252",
+            "baseline_usd": "0.00045056",
+            "cost_ratio": "0.0056"
+          },
+          {
+            "turn": 2,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 6,
+            "output": 16,
+            "cost_usd": "0.00011446",
+            "baseline_usd": "0.00045049",
+            "cost_ratio": "0.2541"
+          },
+          {
+            "turn": 3,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 8,
+            "output": 16,
+            "cost_usd": "0.00011453",
+            "baseline_usd": "0.00045056",
+            "cost_ratio": "0.2542"
+          },
+          {
+            "turn": 4,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 5,
+            "output": 16,
+            "cost_usd": "0.00011442",
+            "baseline_usd": "0.00045045",
+            "cost_ratio": "0.2540"
+          },
+          {
+            "turn": 5,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 6,
+            "output": 16,
+            "cost_usd": "0.00011446",
+            "baseline_usd": "0.00045049",
+            "cost_ratio": "0.2541"
+          },
+          {
+            "turn": 6,
+            "kind": "stable",
+            "read": 12802,
+            "write": 0,
+            "uncached": 7,
+            "output": 16,
+            "cost_usd": "0.00011450",
+            "baseline_usd": "0.00045056",
+            "cost_ratio": "0.2541"
+          },
+          {
+            "turn": 7,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 10,
+            "output": 16,
+            "cost_usd": "0.00011460",
+            "baseline_usd": "0.00045063",
+            "cost_ratio": "0.2543"
+          },
+          {
+            "turn": 8,
+            "kind": "break",
+            "read": 0,
+            "write": 12804,
+            "uncached": 5,
+            "output": 16,
+            "cost_usd": "0.00000242",
+            "baseline_usd": "0.00045056",
+            "cost_ratio": "0.0054"
+          }
+        ],
+        "actual_usd": "0.00069191",
+        "baseline_usd": "0.00360430",
+        "saved_usd": "0.00291239",
+        "session_ratio": "0.1920"
+      },
+      "per_1000_sessions": {
+        "sessions": "1000",
+        "actual_usd": "0.69191000",
+        "baseline_usd": "3.60430000",
+        "saved_usd": "2.91239000",
+        "label": "projection from the measured session, not a separate run"
+      }
+    },
+    {
+      "title": "Nova Lite",
+      "provider": "bedrock",
+      "model": "amazon.nova-lite-v1:0",
+      "turns": [
+        {
+          "turn": 1,
+          "kind": "stable",
+          "read": 0,
+          "write": 12801,
+          "uncached": 8,
+          "output": 16
+        },
+        {
+          "turn": 2,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 6,
+          "output": 16
+        },
+        {
+          "turn": 3,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 8,
+          "output": 16
+        },
+        {
+          "turn": 4,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 5,
+          "output": 16
+        },
+        {
+          "turn": 5,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 6,
+          "output": 16
+        },
+        {
+          "turn": 6,
+          "kind": "stable",
+          "read": 12802,
+          "write": 0,
+          "uncached": 7,
+          "output": 16
+        },
+        {
+          "turn": 7,
+          "kind": "stable",
+          "read": 12801,
+          "write": 0,
+          "uncached": 10,
+          "output": 16
+        },
+        {
+          "turn": 8,
+          "kind": "break",
+          "read": 0,
+          "write": 12804,
+          "uncached": 5,
+          "output": 16
+        }
+      ],
+      "summary": {
+        "provider": "bedrock",
+        "model": "amazon.nova-lite-v1:0",
+        "turns": [
+          {
+            "turn": 1,
+            "kind": "stable",
+            "read": 0,
+            "write": 12801,
+            "uncached": 8,
+            "output": 16,
+            "cost_usd": "0.00000432",
+            "baseline_usd": "0.00077238",
+            "cost_ratio": "0.0056"
+          },
+          {
+            "turn": 2,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 6,
+            "output": 16,
+            "cost_usd": "0.00019622",
+            "baseline_usd": "0.00077226",
+            "cost_ratio": "0.2541"
+          },
+          {
+            "turn": 3,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 8,
+            "output": 16,
+            "cost_usd": "0.00019634",
+            "baseline_usd": "0.00077238",
+            "cost_ratio": "0.2542"
+          },
+          {
+            "turn": 4,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 5,
+            "output": 16,
+            "cost_usd": "0.00019616",
+            "baseline_usd": "0.00077220",
+            "cost_ratio": "0.2540"
+          },
+          {
+            "turn": 5,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 6,
+            "output": 16,
+            "cost_usd": "0.00019622",
+            "baseline_usd": "0.00077226",
+            "cost_ratio": "0.2541"
+          },
+          {
+            "turn": 6,
+            "kind": "stable",
+            "read": 12802,
+            "write": 0,
+            "uncached": 7,
+            "output": 16,
+            "cost_usd": "0.00019629",
+            "baseline_usd": "0.00077238",
+            "cost_ratio": "0.2541"
+          },
+          {
+            "turn": 7,
+            "kind": "stable",
+            "read": 12801,
+            "write": 0,
+            "uncached": 10,
+            "output": 16,
+            "cost_usd": "0.00019646",
+            "baseline_usd": "0.00077250",
+            "cost_ratio": "0.2543"
+          },
+          {
+            "turn": 8,
+            "kind": "break",
+            "read": 0,
+            "write": 12804,
+            "uncached": 5,
+            "output": 16,
+            "cost_usd": "0.00000414",
+            "baseline_usd": "0.00077238",
+            "cost_ratio": "0.0054"
+          }
+        ],
+        "actual_usd": "0.00118615",
+        "baseline_usd": "0.00617874",
+        "saved_usd": "0.00499259",
+        "session_ratio": "0.1920"
+      },
+      "per_1000_sessions": {
+        "sessions": "1000",
+        "actual_usd": "1.18615000",
+        "baseline_usd": "6.17874000",
+        "saved_usd": "4.99259000",
+        "label": "projection from the measured session, not a separate run"
+      }
+    }
+  ],
+  "not_run": [
+    {
+      "model": "openai.gpt-oss-120b-1:0",
+      "reason": "Earlier calls returned no cache fields."
+    },
+    {
+      "model": "claude-haiku",
+      "reason": "Account blocked Claude pending the Anthropic use-case form."
+    }
+  ]
+}

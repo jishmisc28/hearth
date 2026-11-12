@@ -1,8 +1,28 @@
 # Cache Efficiency Report v1
-**Data Frozen:** 2026-10-19 · Hearth Milestone 4 (M4)
-**Scope:** 4 Frameworks × 2 Providers across 20 Pre-Registered Tasks (160 Evaluated Sessions)
+
+The live numbers are in the next section. The 42% figure further down is the offline simulator. It is not a provider bill.
+
+## Live agent session · 2026-11-12
+
+Run `43261384508`, commit `1a0845a`. Raw counts: `bench/live/2026-11-12.json`. Chart: `hearth-live-session.html`.
+
+The same instructions, about 12,000 to 14,000 tokens, were sent with a new short question on each turn. Replies were capped at 16 tokens. Dollars use the sourced prices in `providers.toml`.
+
+| Model | Turns measured | Cache read on the second turn | Session cost | Uncached cost of those tokens | Session cost as a share of uncached | 1,000 sessions, projected saving |
+|---|---:|---:|---:|---:|---:|---:|
+| Gemini 2.5 Flash | 6, then the free-tier quota stopped the run | 14,314 of 14,410 (99.3%) | $0.00330885 | $0.01297080 | 25.5% | $9.66 |
+| Nova Micro | 8, including the changed instruction | 12,801 of 12,807 (99.95%) | $0.00069191 | $0.00360430 | 19.2% | $2.91 |
+| Nova Lite | 8, including the changed instruction | 12,801 of 12,807 (99.95%) | $0.00118615 | $0.00617874 | 19.2% | $4.99 |
+
+On Nova, the eighth turn changed the instructions. The cache read went back to 0 and a new cache write was recorded. Gemini did not reach that turn: the key returned HTTP 429 on the free-tier request quota.
+
+The 1,000-session column multiplies this measured session by 1,000. It is not a second experiment.
+
+gpt-oss is omitted because the earlier calls returned no cache fields. Claude is omitted because this Bedrock account blocked Haiku until the Anthropic use-case form is submitted.
 
 ---
+
+**Simulator, frozen 2026-10-19.** The table below repeats the same result on every framework row. It is a rehearsal, not the live bill above.
 
 ## Executive Summary
 

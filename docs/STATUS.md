@@ -18,6 +18,21 @@ Replies are capped. A saved Bedrock URL that ends in `/v1/chat/completions` is n
 
 ## Log
 
+## 2026-11-12 · One agent session is the live claim
+Gate commands and output tails:
+- `make check` at `1a0845a`: `85 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 83 passed, 4 deselected`
+- GitHub Actions run `43261384508` completed. Gemini measured 6 turns and then returned free-tier 429. Nova Micro and Nova Lite measured 8 turns.
+Numbers: this run added $0.00518691. Priced spend to date is $0.00611861.
+What changed (user-visible first):
+- A repeated 14,314-token Gemini prefix was a cache read. Those six turns cost 25.5% of the uncached bill.
+- Nova kept a 12,801-token cache read across six questions. The eighth turn changed the instructions and the read went back to 0. The Nova sessions cost 19.2% of the uncached bill.
+- The raw counts are in `bench/live/2026-11-12.json`. The chart is `hearth-live-session.html`. `docs/REPORT.md` now leads with this session and labels the old 42% table as the simulator.
+Learned (for Abhranshu):
+- One measured session times 1,000 is a projection: about $9.66 on Gemini, $2.91 on Nova Micro, $4.99 on Nova Lite. That is not a second run.
+- A larger receipt needs Gemini billing past the free tier, and the Anthropic use-case form before Claude can be included. Repeating this session hundreds of times would only reprint the same rate.
+GTM-ready: the three session ratios above, with the projection labeled as a projection.
+Blocked on Abhranshu: Gemini billing, if longer Gemini sessions are wanted. The Anthropic use-case form, if Claude is wanted.
+
 ## 2026-11-11 · Nova cache saving is priced. Claude on this account is not.
 Gate commands and output tails:
 - `make check` at `b50ad25`: `82 files already formatted; mypy --strict src/hearth: Success: no issues found in 43 source files; 81 passed, 4 deselected`
