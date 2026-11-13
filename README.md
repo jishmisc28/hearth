@@ -9,13 +9,11 @@
 
 One real Kimi K3 run (12 Nov 2026, Actions `43269713464`): what Hearth is for, the standing document, no-cache vs cached cost, the break when the document changes, and the receipt — **paid $0.95546138** against **$2.22368850** uncached (**saved $1.26822712**). Source: [`bench/live/2026-11-12-broad.json`](bench/live/2026-11-12-broad.json).
 
-https://github.com/jishmisc28/hearth/raw/main/docs/media/hearth-cost-proof.mp4
+https://github.com/jishmisc28/hearth/releases/download/proof-video/hearth-cost-proof.mp4
 
-<video src="https://github.com/jishmisc28/hearth/raw/main/docs/media/hearth-cost-proof.mp4" controls muted autoplay playsinline preload="metadata" width="100%">
-  <a href="docs/media/hearth-cost-proof.mp4">Download the proof video</a>
-</video>
+![Proof video](https://github.com/jishmisc28/hearth/releases/download/proof-video/hearth-cost-proof.mp4)
 
-[Open the proof video](docs/media/hearth-cost-proof.mp4) · [Live session write-up](docs/REPORT.md)
+[Download](https://github.com/jishmisc28/hearth/releases/download/proof-video/hearth-cost-proof.mp4) · [Live session write-up](docs/REPORT.md)
 
 An embeddable context engine that keeps an AI agent's prompt cache warm and proves it with measurements.
 
