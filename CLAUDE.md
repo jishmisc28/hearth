@@ -68,8 +68,8 @@ The GTM thread follows `gtm/GTM_HANDBOOK.md`.
 
 ## Parallel threads
 
-- **The GTM thread** works in a git worktree on branch `gtm` and edits only `gtm/`.
-- **The build thread** never edits `gtm/`. It reads GTM files with `git show gtm:<path>`, and merges `gtm` into `main` at M7.
+- **The GTM thread** works in a local git worktree on branch `gtm` and edits only `gtm/`. Never push `gtm` to origin (D-26); delete `origin/gtm` if it appears.
+- **The build thread** never edits `gtm/`. It reads GTM files with `git show gtm:<path>`, and merges local `gtm` into `main` at M7.
 - **Subagents.** Use them on cheaper models for independent, well-specified work: adapters' boilerplate, task fixtures, CLI formatting, docs. Core layout, guard, planner and simulator logic is written or reviewed by the strongest model.
 
 ## STATUS entry format

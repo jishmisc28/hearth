@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Reject any push of the local-only gtm branch (D-26).
+set -euo pipefail
+
+remote="${1:-}"
+url="${2:-}"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$local_ref" == "refs/heads/gtm" || "$remote_ref" == "refs/heads/gtm" ]]; then
+    echo "refusing to push gtm: D-26 keeps that branch local-only (not on origin)." >&2
+    echo "delete a stray remote with: git push origin --delete gtm" >&2
+    exit 1
+  fi
+done
+
+exit 0

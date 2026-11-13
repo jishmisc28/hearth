@@ -1,4 +1,6 @@
 .env
+# GTM branch is local-only (D-26). Never push refs/heads/gtm to origin.
+# .githooks/pre-push rejects that push. Private GTM files stay out of every branch:
 gtm/private/
 .venv/
 __pycache__/

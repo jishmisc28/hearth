@@ -7,11 +7,15 @@
 
 ## Proof video
 
-Hearth is one line — `client = hearth.wrap(client)` — that keeps a provider prompt cache valid and records the bill. This silent 2:40 film walks one real Kimi K3 run (12 Nov 2026, GitHub Actions `43269713464`): the standing document, the no-cache price, the measured cache reads, the break when the document changes, and the receipt (**paid $0.95546138**, **full price $2.22368850**, **saved $1.26822712**). Numbers are from [`bench/live/2026-11-12-broad.json`](bench/live/2026-11-12-broad.json).
+One real Kimi K3 run (12 Nov 2026, Actions `43269713464`): what Hearth is for, the standing document, no-cache vs cached cost, the break when the document changes, and the receipt — **paid $0.95546138** against **$2.22368850** uncached (**saved $1.26822712**). Source: [`bench/live/2026-11-12-broad.json`](bench/live/2026-11-12-broad.json).
 
-<video src="docs/media/hearth-cost-proof.mp4" controls width="720"></video>
+https://github.com/jishmisc28/hearth/raw/main/docs/media/hearth-cost-proof.mp4
 
-[Download the proof video](docs/media/hearth-cost-proof.mp4) · [Live session write-up](docs/REPORT.md)
+<video src="https://github.com/jishmisc28/hearth/raw/main/docs/media/hearth-cost-proof.mp4" controls muted autoplay playsinline preload="metadata" width="100%">
+  <a href="docs/media/hearth-cost-proof.mp4">Download the proof video</a>
+</video>
+
+[Open the proof video](docs/media/hearth-cost-proof.mp4) · [Live session write-up](docs/REPORT.md)
 
 An embeddable context engine that keeps an AI agent's prompt cache warm and proves it with measurements.
 
