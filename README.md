@@ -7,7 +7,7 @@
 
 ## Proof video
 
-One real Kimi K3 run (12 Nov 2026, Actions `43269713464`): what Hearth is for, the standing document, no-cache vs cached cost, the break when the document changes, and the receipt — **paid $0.95546138** against **$2.22368850** uncached (**saved $1.26822712**). Source: [`bench/live/2026-11-12-broad.json`](bench/live/2026-11-12-broad.json).
+One real Kimi K3 run: what Hearth is for, the standing document, no-cache vs cached cost, the break when the document changes, and the receipt — **paid $0.95546138** against **$2.22368850** uncached (**saved $1.26822712**). Source: [`bench/live/2026-11-12-broad.json`](bench/live/2026-11-12-broad.json).
 
 https://github.com/user-attachments/assets/7d850e71-80c2-4a15-a6bb-309a9d7175b5
 
